@@ -1,7 +1,11 @@
 extends TileMapLayer
 class_name HexGrid
 
-# Configuration constants - easier to change in one place
+# Configuration constants
+# These define the shape of a Regular Hexagon in "World Space".
+# They are independent of screen resolution.
+# Ratio: Width / Height should be approx sqrt(3)/2 (0.866) for a regular hex.
+# 90 / 104 = 0.8653 (0.07% error), providing a clean integer loop for tiling.
 const HEX_WIDTH = 90
 const HEX_HEIGHT = 104
 const TILE_SOURCE_ID = 0

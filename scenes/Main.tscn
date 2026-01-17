@@ -1,23 +1,30 @@
-[gd_scene load_steps=5 format=3 uid="uid://b8j2k3l4m5n6"]
+[gd_scene load_steps=7 format=3 uid="uid://b8j2k3l4m5n6"]
 
-[ext_resource type="Script" path="res://scripts/HexGrid.gd" id="1_grid"]
-[ext_resource type="Script" path="res://scripts/components/RectangularMapGenerator.gd" id="2_gen"]
-[ext_resource type="Script" path="res://scripts/CameraControl.gd" id="3_cam"]
-[ext_resource type="Script" path="res://scripts/CoordinateOverlay.gd" id="4_overlay"]
+[ext_resource type="Script" path="res://scripts/systems/MapService.gd" id="1_service"]
+[ext_resource type="Script" path="res://scripts/HexGrid.gd" id="2_view"]
+[ext_resource type="Script" path="res://scripts/components/RectangularMapGenerator.gd" id="3_gen"]
+[ext_resource type="Resource" path="res://resources/terrains/grass.tres" id="4_grass"]
+[ext_resource type="Script" path="res://scripts/CameraControl.gd" id="5_cam"]
+[ext_resource type="Script" path="res://scripts/CoordinateOverlay.gd" id="6_overlay"]
 
 [node name="Main" type="Node2D"]
 
-[node name="HexGrid" type="TileMapLayer" parent="."]
-script = ExtResource("1_grid")
+[node name="MapService" type="Node" parent="."]
+script = ExtResource("1_service")
 
-[node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("tile_map_layer")]
-script = ExtResource("2_gen")
-tile_map_layer = NodePath("../HexGrid")
+[node name="HexGridView" type="TileMapLayer" parent="." node_paths=PackedStringArray("map_service")]
+script = ExtResource("2_view")
+map_service = NodePath("../MapService")
+
+[node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("map_service")]
+script = ExtResource("3_gen")
+map_service = NodePath("../MapService")
+default_terrain = ExtResource("4_grass")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-script = ExtResource("3_cam")
+script = ExtResource("5_cam")
 
 [node name="CoordinateOverlay" type="Node2D" parent="." node_paths=PackedStringArray("tile_map", "camera")]
-script = ExtResource("4_overlay")
-tile_map = NodePath("../HexGrid")
+script = ExtResource("6_overlay")
+tile_map = NodePath("../HexGridView")
 camera = NodePath("../Camera2D")

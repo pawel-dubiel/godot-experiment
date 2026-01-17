@@ -46,6 +46,11 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
     *   **TurnManager**: A central system that cycles through the configured list of phases.
     *   **Benefit**: The structure of a turn is fully configurable. A game can be "Move then Attack" or "Three Action Points shared".
 
+4.  **Decoupled Rendering (Model-View Separation)**
+    *   **Strict Boundary**: Game Logic (Model) and Visuals (View) are completely separate scenes/nodes.
+    *   **One-Way Flow**: Logic updates State -> Emits Signals -> View Updates.
+    *   **Headless**: The entire game simulation must be runnable in headless mode (no window, no graphics) for testing or server use.
+
 ## Technical Specifications
 
 *   **Engine Version**: Godot 4.5+ (Forward Plus renderer).

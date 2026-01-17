@@ -41,15 +41,25 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
     *   **Validation**: Commands are validated against a set of rules (e.g., `RangeRule`, `CostRule`) before execution.
     *   **Benefit**: Rules can be swapped or modified per game mode without changing the core engine.
 
-3.  **Turn System (Phase-Based)**
+3.  **Advanced Command System (Conditions & Effects)**
+    *   **Requirements**: Commands have `Requirement` resources (e.g., `LineOfSight`, `ActionPoints`). Checked during validation.
+    *   **Effects**: Commands spawn `Effect` resources (e.g., `Damage`, `Heal`, `Push`) upon execution.
+    *   **Providers**: `UnitComponents` expose available commands dynamically based on game state (e.g., `AttackComponent` provides `AttackCommand`).
+
+4.  **Turn System (Phase-Based)**
     *   **Phases**: Turns are divided into discrete `GamePhase` resources (e.g., `StartPhase`, `MovementPhase`, `CombatPhase`).
     *   **TurnManager**: A central system that cycles through the configured list of phases.
     *   **Benefit**: The structure of a turn is fully configurable. A game can be "Move then Attack" or "Three Action Points shared".
 
-4.  **Decoupled Rendering (Model-View Separation)**
+5.  **Decoupled Rendering (Model-View Separation)**
     *   **Strict Boundary**: Game Logic (Model) and Visuals (View) are completely separate scenes/nodes.
     *   **One-Way Flow**: Logic updates State -> Emits Signals -> View Updates.
     *   **Headless**: The entire game simulation must be runnable in headless mode (no window, no graphics) for testing or server use.
+
+6.  **Event-Driven Communication (Signals)**
+    *   **Mechanism**: Heavily relies on Godot's built-in `Signal` system (Observer Pattern).
+    *   **Loose Coupling**: Systems emit events (e.g., `health_changed`, `turn_ended`) without knowing who is listening.
+    *   **Benefit**: Allows the UI or other systems to react to changes without creating hard dependencies (Spaghetti Code).
 
 ## Technical Specifications
 

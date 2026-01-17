@@ -25,7 +25,26 @@ The primary goal is to establish a scalable foundation for large strategy maps. 
 4.  **CameraControl**
     *   Implements a robust 2D camera system.
     *   Supports multiple input methods: Mouse Wheel, Keyboard shortcuts, and Touchpad gestures (Pinch/Pan).
-    *   Includes logic to normalize input sensitivity across different devices (e.g., macOS trackpads vs. standard mice).
+    -   Includes logic to normalize input sensitivity across different devices (e.g., macOS trackpads vs. standard mice).
+
+### Architecture: Generic Strategy Engine
+
+The engine is designed to be data-driven and modular, avoiding hardcoded logic for specific game rules.
+
+1.  **Entity-Component System (Composition over Inheritance)**
+    *   **Unit (Entity)**: A generic container (Node3D/Node2D) with no intrinsic game logic.
+    *   **Components**: Logic is encapsulated in small, reusable nodes attached to the Unit (e.g., `HealthComponent`, `MovementComponent`, `FactionComponent`).
+    *   **Benefit**: New unit types are created by composing components in the editor, not by writing new classes.
+
+2.  **Rule System (Command Pattern)**
+    *   **Commands**: All gameplay actions (Move, Attack, EndTurn) are encapsulated as `Command` objects.
+    *   **Validation**: Commands are validated against a set of rules (e.g., `RangeRule`, `CostRule`) before execution.
+    *   **Benefit**: Rules can be swapped or modified per game mode without changing the core engine.
+
+3.  **Turn System (Phase-Based)**
+    *   **Phases**: Turns are divided into discrete `GamePhase` resources (e.g., `StartPhase`, `MovementPhase`, `CombatPhase`).
+    *   **TurnManager**: A central system that cycles through the configured list of phases.
+    *   **Benefit**: The structure of a turn is fully configurable. A game can be "Move then Attack" or "Three Action Points shared".
 
 ## Technical Specifications
 

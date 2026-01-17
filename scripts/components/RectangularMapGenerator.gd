@@ -3,21 +3,22 @@ class_name RectangularMapGenerator
 
 @export var width: int = 20
 @export var height: int = 20
-@export var tile_map_layer: TileMapLayer
-@export var tile_source_id: int = 0
-@export var tile_atlas_coords: Vector2i = Vector2i(0, 0)
+@export var map_service: MapService
+@export var default_terrain: TerrainType
 
 func _ready() -> void:
-	if tile_map_layer:
+	# Wait one frame to ensure dependencies are ready if initialized in same scene
+	await get_tree().process_frame
+	if map_service and default_terrain:
 		generate()
 
 func generate() -> void:
-	if not tile_map_layer:
-		push_warning("MapGenerator: No target TileMapLayer assigned.")
-		return
-		
-	print("MapGenerator: Generating %dx%d map..." % [width, height])
+	print("MapGenerator: Generating %dx%d map data..." % [width, height])
+	
+	var tiles = {}
 	for x in range(width):
 		for y in range(height):
-			tile_map_layer.set_cell(Vector2i(x, y), tile_source_id, tile_atlas_coords)
+			tiles[Vector2i(x, y)] = default_terrain
+			
+	map_service.initialize_map(tiles)
 	print("MapGenerator: Done.")

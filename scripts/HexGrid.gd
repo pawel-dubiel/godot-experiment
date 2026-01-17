@@ -1,17 +1,17 @@
 extends TileMapLayer
-class_name HexGrid
+class_name HexGridView
 
-# Configuration constants
-# These define the shape of a Regular Hexagon in "World Space".
-# They are independent of screen resolution.
-# Ratio: Width / Height should be approx sqrt(3)/2 (0.866) for a regular hex.
-# 90 / 104 = 0.8653 (0.07% error), providing a clean integer loop for tiling.
+@export var map_service: MapService
+
 const HEX_WIDTH = 90
 const HEX_HEIGHT = 104
 const TILE_SOURCE_ID = 0
 
 func _ready() -> void:
 	_setup_tileset()
+	if map_service:
+		map_service.map_updated.connect(_on_map_updated)
+		map_service.tile_changed.connect(_on_tile_changed)
 
 func _setup_tileset() -> void:
 	var ts = TileSet.new()
@@ -24,8 +24,22 @@ func _setup_tileset() -> void:
 	var tex = load("res://assets/hex.svg")
 	source.texture = tex
 	source.texture_region_size = Vector2i(HEX_WIDTH, HEX_HEIGHT)
-	
 	source.create_tile(Vector2i(0, 0))
 	
 	ts.add_source(source, TILE_SOURCE_ID)
 	self.tile_set = ts
+
+func _on_map_updated() -> void:
+	clear()
+	var all_coords = map_service.model.get_all_coords()
+	for coord in all_coords:
+		var tile = map_service.get_tile(coord)
+		if tile:
+			_draw_tile(coord, tile.terrain)
+
+func _on_tile_changed(coord: Vector2i, terrain: TerrainType) -> void:
+	_draw_tile(coord, terrain)
+
+func _draw_tile(coord: Vector2i, terrain: TerrainType) -> void:
+	# Here we map the logical TerrainType to the visual Atlas Coords
+	set_cell(coord, TILE_SOURCE_ID, terrain.atlas_coords)

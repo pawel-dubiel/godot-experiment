@@ -19,33 +19,34 @@ func _init():
 	var context = GameContextInfo.new(map_service, null)
 	
 	# 2. Setup Units (Mocked as Nodes with properties)
-	var attacker = Node.new()
-	attacker.name = "Attacker"
-	# Manually adding grid_position property since our Requirement expects it
-	attacker.set_meta("grid_position", Vector2i(0, 0))
-	# Adding a script to allow get("grid_position") to work if it wasn't meta
-	# But for now, let's fix RangeRequirement to use get_meta or just a standard property.
-	# The Requirement used source.get("grid_position"). In Godot, get() works on properties.
-	# So we need a script with that property.
-	var unit_script = GDScript.new()
-	unit_script.source_code = "extends Node\nvar grid_position: Vector2i = Vector2i(0,0)"
-	unit_script.reload()
-	attacker.set_script(unit_script)
+	# Use Unit script to test optimization
+	var UnitScript = load("res://scripts/core/Unit.gd") 
 	
-	var target = Node.new()
+	var attacker = UnitScript.new()
+	attacker.name = "Attacker"
+	attacker.grid_position = Vector2i(0, 0)
+	
+	var target = UnitScript.new()
 	target.name = "Target"
-	target.set_script(unit_script)
-	target.grid_position = Vector2i(1, 0) # Distance 1
+	target.grid_position = Vector2i(1, 0)
 	
 	# Add Health to Target
 	var health = HealthComponentInfo.new()
 	target.add_child(health)
+	
+	# Manually simulate entering tree/ready for optimization logic
+	# Since headless might not auto-ready everything in this specific test setup:
+	health._enter_tree() 
+	
 	# We need to simulate _ready or set values manually
 	health.max_hp = 100
 	health.current_hp = 100
 	
 	root.add_child(attacker)
 	root.add_child(target)
+	
+	# Important: Ensure target is recognized as Unit so optimization triggers
+	print("Test Setup Complete")
 	
 	# 3. Create Command (Attack 10 dmg, range 1)
 	print("--- Creating Command ---")

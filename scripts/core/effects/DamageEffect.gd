@@ -7,13 +7,14 @@ extends Effect
 
 func apply(context: GameContext, source: Node, target: Node) -> void:
 	# Find HealthComponent on target
-	# We search for a child node that is a HealthComponent
 	var health_comp: HealthComponent
 	
-	for child in target.get_children():
-		if child is HealthComponent:
-			health_comp = child
-			break
+	# Optimization: Fast Lookup Only (Fail Fast)
+	if target.has_method("get_component"):
+		health_comp = target.get_component(HealthComponent)
+	else:
+		push_warning("DamageEffect: Target '%s' is not a Unit (missing get_component). Optimization required." % target.name)
+		return
 			
 	if health_comp:
 		health_comp.take_damage(amount)

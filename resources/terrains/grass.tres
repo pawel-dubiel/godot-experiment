@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TerrainType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/resources/TerrainType.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"grass"
+display_name = "Grass Plains"
+is_walkable = true
+movement_cost = 1
+color = Color(1, 1, 1, 1)
+atlas_coords = Vector2i(0, 0)

@@ -2,6 +2,7 @@ extends Node2D
 
 @export var tile_map: TileMapLayer
 @export var camera: Camera2D
+@export var map_service: MapService
 
 var font: Font
 
@@ -49,8 +50,15 @@ func _draw_coordinates(range_rect: Rect2i) -> void:
 		for y in range(range_rect.position.y, range_rect.end.y):
 			var coords = Vector2i(x, y)
 			
-			# Only draw if a cell exists (is not empty)
-			if tile_map.get_cell_source_id(coords) != -1:
+			# DECOUPLED: Check Model for existence, not the View
+			# We still use tile_map for coordinate conversion (pure math), which is allowed
+			var has_tile = false
+			if map_service and map_service.model:
+				has_tile = map_service.model.has_tile(coords)
+			elif tile_map: # Fallback if service not linked (e.g. editor)
+				has_tile = tile_map.get_cell_source_id(coords) != -1
+				
+			if has_tile:
 				var world_pos = tile_map.to_global(tile_map.map_to_local(coords))
 				# Center the text
 				var text_pos = world_pos + Vector2(-20, 5)

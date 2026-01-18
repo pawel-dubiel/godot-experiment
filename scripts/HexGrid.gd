@@ -8,6 +8,8 @@ const HEX_HEIGHT = 104
 const TILE_SOURCE_ID = 0
 
 func _ready() -> void:
+	z_index = -1
+	add_to_group("grid_view")
 	_setup_tileset()
 	if map_service:
 		map_service.map_updated.connect(_on_map_updated)

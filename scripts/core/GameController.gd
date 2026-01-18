@@ -20,55 +20,80 @@ func _unhandled_input(event: InputEvent) -> void:
 			_handle_action(event.position)
 
 func _handle_select(screen_pos: Vector2) -> void:
-	var result = _raycast_from_mouse(screen_pos)
-	if result.has("collider"):
-		var collider = result["collider"]
-		var entity = _get_game_entity(collider)
-		if entity:
-			current_selection = entity
-			print("Selected: %s" % entity.name)
-		else:
-			current_selection = null
-			print("Deselected")
+	# In 2D, screen_pos IS the world position relative to CanvasLayer (mostly).
+	# But we want global position in world (accounting for camera).
+	var global_mouse_pos = _get_global_mouse_pos()
+	
+	# Simple distance check for entities
+	# In a real game, use Physics2D raycast or Area2D input_event.
+	# For prototype, iterate "units" group or check distance.
+	var best_candidate: GameEntity = null
+	var min_dist = 25.0 # Tolerance
+	
+	for node in get_tree().get_nodes_in_group("units"):
+		if node is GameEntity:
+			var dist = node.global_position.distance_to(global_mouse_pos)
+			if dist < min_dist:
+				min_dist = dist
+				best_candidate = node
+	
+	if best_candidate:
+		current_selection = best_candidate
+		print("Selected: %s" % best_candidate.name)
+	else:
+		current_selection = null
+		print("Deselected")
 
 func _handle_action(screen_pos: Vector2) -> void:
 	if not current_selection:
 		return
 		
-	var result = _raycast_from_mouse(screen_pos)
-	if result.has("position"):
-		var world_pos = result["position"]
-		var grid_pos = Vector2i(round(world_pos.x), round(world_pos.z))
-		
-		# Check if we clicked an entity (Attack)
-		if result.has("collider"):
-			var target_entity = _get_game_entity(result["collider"])
-			if target_entity and target_entity != current_selection:
-				var attack_comp = current_selection.get_component(AttackComponent)
-				if attack_comp:
-					print("Attacking %s" % target_entity.name)
-					var cmd = attack_comp.create_attack_command(target_entity)
-					# Create Context
-					var context = GameContext.new(map_service)
-					cmd.execute(context)
-					return
-		
-		# Otherwise Move
-		var move_comp = current_selection.get_component(MovementComponent)
-		if move_comp:
-			print("Moving to %s" % grid_pos)
-			move_comp.move_to(grid_pos)
+	var global_mouse_pos = _get_global_mouse_pos()
+	
+	# Check for attack target
+	var target_entity: GameEntity = null
+	var min_dist = 25.0
+	for node in get_tree().get_nodes_in_group("units"):
+		if node is GameEntity and node != current_selection:
+			var dist = node.global_position.distance_to(global_mouse_pos)
+			if dist < min_dist:
+				min_dist = dist
+				target_entity = node
+	
+	if target_entity:
+		var attack_comp = current_selection.get_component(AttackComponent)
+		if attack_comp:
+			print("Attacking %s" % target_entity.name)
+			var cmd = attack_comp.create_attack_command(target_entity)
+			var context = GameContext.new(map_service)
+			cmd.execute(context)
+			return
 
-func _raycast_from_mouse(screen_pos: Vector2) -> Dictionary:
-	var camera = get_viewport().get_camera_3d()
-	if not camera: 
-		return {}
+	# Move
+	if map_service and map_service.model:
+		# We need to convert world pos to grid pos.
+		# Ideally MapService or TileMap layer helps.
+		# For now, let's assume we can get it from the TileMap if we can find it, 
+		# or use a helper if we implement it.
 		
-	var from = camera.project_ray_origin(screen_pos)
-	var to = from + camera.project_ray_normal(screen_pos) * 1000
-	var space = get_viewport().find_world_3d().direct_space_state
-	var query = PhysicsRayQueryParameters3D.create(from, to)
-	return space.intersect_ray(query)
+		# HACK: If we don't have reference to TileMapLayer, we can't easily convert world->map.
+		# Let's hope MapService has a helper or we search for the TileMap.
+		var tile_map = get_tree().get_first_node_in_group("grid_view") as TileMapLayer
+		if tile_map:
+			var local_pos = tile_map.to_local(global_mouse_pos)
+			var grid_pos = tile_map.local_to_map(local_pos)
+			
+			var move_comp = current_selection.get_component(MovementComponent)
+			if move_comp:
+				move_comp.move_to(grid_pos)
+		else:
+			print("Error: No TileMapLayer found in group 'grid_view'")
+
+func _get_global_mouse_pos() -> Vector2:
+	# Keep it simple for 2D
+	return get_parent().get_global_mouse_position()
+
+
 
 func _get_game_entity(node: Node) -> GameEntity:
 	var current = node

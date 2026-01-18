@@ -6,7 +6,7 @@ extends Camera2D
 @export var gesture_sensitivity := 0.05 # For continuous gestures (Trackpad)
 
 func _ready() -> void:
-	position = Vector2(900, 780)
+	pass
 
 func _unhandled_input(event: InputEvent) -> void:
 	# 1. Discrete Mouse Wheel (Standard Mouse)

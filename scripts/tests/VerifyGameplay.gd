@@ -17,6 +17,9 @@ func _ready() -> void:
 	var test_level = test_level_res.instantiate()
 	add_child(test_level)
 	
+	print("TestLevel Tree:")
+	test_level.print_tree_pretty()
+	
 	# Wait for initialization
 	await get_tree().process_frame
 	await get_tree().process_frame

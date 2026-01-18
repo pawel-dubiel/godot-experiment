@@ -1,5 +1,5 @@
 class_name AttackComponent
-extends UnitComponent
+extends EntityComponent
 
 ## Component that enables a unit to attack.
 ## Acts as a CommandProvider.

@@ -10,10 +10,10 @@ In a strategy game with potentially hundreds or thousands of units, performance 
 
 ## Decision
 
-### 1. Component Caching (O(1) Lookup)
-*   **Mechanism**: All high-frequency entities must inherit from a base `Unit` class.
-*   **Implementation**: This class maintains a `Dictionary` mapping Component Types (Scripts) to instances.
-*   **Usage**: Access components via `unit.get_component(Type)` instead of `get_node()`.
+### 1. Component Caching & Messaging (Inheritance Required)
+*   **Mechanism**: All interactive entities (Units, Buildings, Destructible Rocks) **MUST** inherit from the base `GameEntity` class.
+*   **Implementation**: This class provides `O(1)` Component Caching and the `send_message()` interface.
+*   **Effect Usage**: Interactions should cast to `GameEntity` and assume methods exist. `if target is GameEntity: target.send_message(...)`.
 
 ### 2. Fail Fast Rule
 *   **Strictness**: Core systems (Commands, Effects) **MUST NOT** implement fallback logic for optimization.

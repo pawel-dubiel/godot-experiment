@@ -19,14 +19,14 @@ func _init():
 	var context = GameContextInfo.new(map_service, null)
 	
 	# 2. Setup Units (Mocked as Nodes with properties)
-	# Use Unit script to test optimization
-	var UnitScript = load("res://scripts/core/Unit.gd") 
+	# Use GameEntity script to test optimization
+	var GameEntityScript = load("res://scripts/core/GameEntity.gd") 
 	
-	var attacker = UnitScript.new()
+	var attacker = GameEntityScript.new()
 	attacker.name = "Attacker"
 	attacker.grid_position = Vector2i(0, 0)
 	
-	var target = UnitScript.new()
+	var target = GameEntityScript.new()
 	target.name = "Target"
 	target.grid_position = Vector2i(1, 0)
 	
@@ -35,8 +35,10 @@ func _init():
 	target.add_child(health)
 	
 	# Manually simulate entering tree/ready for optimization logic
-	# Since headless might not auto-ready everything in this specific test setup:
-	health._enter_tree() 
+	# AND Message Subscription
+	# target.add_child(health) # Already added above
+	health._enter_tree()
+	health._ready() 
 	
 	# We need to simulate _ready or set values manually
 	health.max_hp = 100

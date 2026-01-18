@@ -24,5 +24,5 @@ func get_available_commands(context: GameContext) -> Array[Command]:
 
 ## Factory method to create an attack command against a specific target
 func create_attack_command(target: Node) -> AttackCommand:
-	var cmd = AttackCommand.new(get_unit(), target, attack_damage, attack_range)
+	var cmd = AttackCommand.new(get_entity(), target, attack_damage, attack_range)
 	return cmd

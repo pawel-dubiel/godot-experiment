@@ -11,7 +11,7 @@ var _components: Dictionary = {}
 var _subscribers: Dictionary = {}
 
 # Core property for Map positioning
-var grid_position: Vector2i = Vector2i(0, 0)
+@export var grid_position: Vector2i = Vector2i(0, 0)
 
 func _ready() -> void:
 	# Add to a group for global access if needed

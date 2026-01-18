@@ -1,5 +1,5 @@
 class_name GameEntity
-extends Node3D # Or Node2D, depending on game type. Using Node3D as generic base.
+extends Node2D # Converted to 2D per user request
 
 ## Base Entity class key for optimization.
 ## Maintains a cache of components to avoid get_children() loops.
@@ -12,10 +12,34 @@ var _subscribers: Dictionary = {}
 
 # Core property for Map positioning
 @export var grid_position: Vector2i = Vector2i(0, 0)
+@export var orientation: int = 0: # 0 to 5, representing 6 walls of a hex
+	set(value):
+		orientation = wrapi(value, 0, 6)
+		_update_visual_orientation()
 
 func _ready() -> void:
-	# Add to a group for global access if needed
+	z_index = 10 # Force on top
+	z_as_relative = false
 	add_to_group("units")
+	
+	# Initial Snap to Grid
+	call_deferred("_snap_to_grid")
+
+func _snap_to_grid() -> void:
+	var tile_map = get_tree().get_first_node_in_group("grid_view") as TileMapLayer
+	if tile_map:
+		position = tile_map.map_to_local(grid_position)
+		_update_visual_orientation()
+
+func _update_visual_orientation() -> void:
+	# Rotate the Visuals node if present
+	var visuals = get_node_or_null("Visuals")
+	if visuals:
+		# Hex walls are typically at 30, 90, 150... or 0, 60, 120 depending on point-top vs flat-top.
+		visuals.rotation_degrees = orientation * 60.0
+	queue_redraw()
+
+
 
 ## Subscribe to a message topic.
 ## Handler must be a specific method (Callable) that accepts a data Dictionary.

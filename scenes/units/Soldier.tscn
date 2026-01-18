@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/core/GameEntity.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/components/HealthComponent.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/components/AttackComponent.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/components/MovementComponent.gd" id="4"]
+[ext_resource type="Script" uid="uid://c0pwmcyw1nb75" path="res://scripts/core/GameEntity.gd" id="1"]
+[ext_resource type="Script" uid="uid://dqyjbq334vv8o" path="res://scripts/components/HealthComponent.gd" id="2"]
+[ext_resource type="Script" uid="uid://b2woslekb42ga" path="res://scripts/components/AttackComponent.gd" id="3"]
+[ext_resource type="Script" uid="uid://bv215psyess04" path="res://scripts/components/MovementComponent.gd" id="4"]
+[ext_resource type="Texture2D" uid="uid://yir7jmutwxnl" path="res://assets/soldier.jpg" id="5"]
 
 [node name="Soldier" type="Node2D"]
 script = ExtResource("1")
@@ -21,7 +22,8 @@ attack_range = 1
 script = ExtResource("4")
 move_range = 3
 
-[node name="Visuals" type="Polygon2D" parent="."]
+[node name="Visuals" type="Sprite2D" parent="."]
 z_index = 5
-color = Color(0.2, 0.6, 1, 1)
-polygon = PackedVector2Array(-20, -20, 15, -20, 25, 0, 15, 20, -20, 20)
+texture = ExtResource("5")
+scale = Vector2(0.04, 0.04)
+rotation = 1.5708

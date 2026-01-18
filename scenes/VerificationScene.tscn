@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://cfrvnqhp18g6d"]
 
-[ext_resource type="Script" path="res://scripts/tests/VerifyGameplay.gd" id="1"]
+[ext_resource type="Script" uid="uid://bkk1wobtune8w" path="res://scripts/tests/VerifyGameplay.gd" id="1"]
 
 [node name="VerificationScene" type="Node"]
 script = ExtResource("1")

@@ -29,9 +29,11 @@ default_terrain = ExtResource("4")
 position = Vector2(400, 300)
 script = ExtResource("8")
 
-[node name="GameController" type="Node" parent="."]
+[node name="GameController" type="Node" parent="." node_paths=PackedStringArray("map_service", "tile_map", "units_root")]
 script = ExtResource("7")
-map_service_path = NodePath("../MapService")
+map_service = NodePath("../MapService")
+tile_map = NodePath("../HexGridView")
+units_root = NodePath("..")
 
 [node name="Soldier" parent="." instance=ExtResource("5")]
 grid_position = Vector2i(5, 2)

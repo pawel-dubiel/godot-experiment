@@ -11,9 +11,17 @@ func _ready() -> void:
 	z_index = -1
 	add_to_group("grid_view")
 	_setup_tileset()
-	if map_service:
-		map_service.map_updated.connect(_on_map_updated)
-		map_service.tile_changed.connect(_on_tile_changed)
+	if not _resolve_dependencies():
+		return
+
+	map_service.map_updated.connect(_on_map_updated)
+	map_service.tile_changed.connect(_on_tile_changed)
+
+func _resolve_dependencies() -> bool:
+	if not map_service:
+		push_error("HexGridView requires map_service.")
+		return false
+	return true
 
 func _setup_tileset() -> void:
 	var ts = TileSet.new()

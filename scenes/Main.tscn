@@ -24,7 +24,8 @@ default_terrain = ExtResource("4_grass")
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("5_cam")
 
-[node name="CoordinateOverlay" type="Node2D" parent="." node_paths=PackedStringArray("tile_map", "camera")]
+[node name="CoordinateOverlay" type="Node2D" parent="." node_paths=PackedStringArray("tile_map", "camera", "map_service")]
 script = ExtResource("6_overlay")
 tile_map = NodePath("../HexGridView")
 camera = NodePath("../Camera2D")
+map_service = NodePath("../MapService")

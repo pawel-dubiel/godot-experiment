@@ -1,5 +1,7 @@
 extends Camera2D
 
+signal view_changed
+
 @export var min_zoom := 0.2
 @export var max_zoom := 5.0
 @export var zoom_factor := 1.1 # For discrete steps (Wheel, Keyboard)
@@ -35,15 +37,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			apply_zoom(zoom_factor)
 		elif event.keycode == KEY_MINUS: # -
 			apply_zoom(1.0 / zoom_factor)
-	
+
 	# Panning (Middle/Right Click)
 	if event is InputEventMouseMotion:
 		if Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 			position -= event.relative / zoom
+			view_changed.emit()
 
 func apply_zoom(factor: float) -> void:
 	var new_zoom = zoom * factor
 	new_zoom = new_zoom.clamp(Vector2(min_zoom, min_zoom), Vector2(max_zoom, max_zoom))
-	
+
 	if new_zoom != zoom:
 		zoom = new_zoom
+		view_changed.emit()

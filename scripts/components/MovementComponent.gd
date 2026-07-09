@@ -8,39 +8,35 @@ extends EntityComponent
 
 signal movement_finished(final_pos: Vector2i)
 
+var _move_validator: Callable
+
+func set_move_validator(validator: Callable) -> void:
+	if not validator.is_valid():
+		push_error("MovementComponent requires a valid move validator.")
+		return
+	_move_validator = validator
+
 ## Teleport to a grid position immediately (Logical Move)
 func move_to(new_position: Vector2i) -> void:
 	var entity: GameEntity = get_entity()
-	if entity:
-		var old_position: Vector2i = entity.grid_position
-		
-		# Update logical position
-		entity.grid_position = new_position
-		
-		# Visual Update
-		var tile_map = get_tree().get_first_node_in_group("grid_view") as TileMapLayer
-		if tile_map:
-			var local_pos = tile_map.map_to_local(new_position)
-			
-			# Calculate Orientation
-			var prev_world_pos = entity.position
-			var diff = local_pos - prev_world_pos
-			if diff.length_squared() > 0.1:
-				var angle = diff.angle() # Radians, -PI to PI. 0 is Right.
-				var deg = rad_to_deg(angle)
-				# Snap to nearest 60 degrees.
-				# 0 -> 0, 60 -> 1, 120 -> 2...
-				# deg can be negative (e.g. -60 is Top Right -> 5)
-				if deg < 0: deg += 360
-				
-				var orient_index = int(round(deg / 60.0)) % 6
-				entity.orientation = orient_index
-			
-			entity.position = local_pos
-		else:
-			# Fallback if no map view found (e.g. headless test without scene tree fully ready? or just logic test)
-			# Stick to grid coords for debug
-			entity.position = Vector2(new_position.x * 64, new_position.y * 64)
+	if not entity:
+		push_error("MovementComponent requires a GameEntity parent.")
+		return
 
-		entity.send_message("moved", { "from": old_position, "to": new_position })
-		movement_finished.emit(new_position)
+	if not _move_validator.is_valid():
+		push_error("MovementComponent for %s requires an explicit move validator before moving." % entity.name)
+		return
+
+	var validation_result = _move_validator.call(entity, new_position)
+	if typeof(validation_result) != TYPE_BOOL:
+		push_error("MovementComponent move validator for %s must return bool." % entity.name)
+		return
+	if not validation_result:
+		return
+
+	var old_position: Vector2i = entity.grid_position
+	if not entity.move_to_grid_position(new_position):
+		return
+
+	entity.send_message("moved", { "from": old_position, "to": new_position })
+	movement_finished.emit(new_position)

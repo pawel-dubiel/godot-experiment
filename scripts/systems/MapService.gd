@@ -18,6 +18,7 @@ func get_tile(coord: Vector2i) -> TileInstance:
 
 # Bulk operation for performance
 func initialize_map(new_tiles: Dictionary) -> void:
+	model.clear()
 	for coord in new_tiles:
 		model.set_tile(coord, new_tiles[coord])
 	map_updated.emit()

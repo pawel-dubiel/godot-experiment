@@ -1,4 +1,4 @@
-# ADR 004: Performance Standards (Fail Fast & Component Caching)
+# ADR 004: Performance Standards (Clear Boundaries & Component Caching)
 
 ## Status
 Accepted
@@ -6,7 +6,7 @@ Accepted
 ## Context
 In a strategy game with potentially hundreds or thousands of units, performance is critical.
 1.  **The Loop Problem**: Frequently querying `get_children()` or `get_node()` (O(N)) for every interaction (e.g., checking Health) causes significant frame drops at scale.
-2.  ** The Robustness Trap**: Often, code is written to "fail gracefully" (e.g., "if component missing, try finding it manually"). While safer at runtime, this hides configuration bugs and encourages slow code paths.
+2.  **The Responsibility Trap**: Runtime fallback logic (e.g., "if a component is missing, try finding it manually") hides ownership bugs and encourages slow code paths.
 
 ## Decision
 
@@ -15,14 +15,14 @@ In a strategy game with potentially hundreds or thousands of units, performance 
 *   **Implementation**: This class provides `O(1)` Component Caching and the `send_message()` interface.
 *   **Effect Usage**: Interactions should cast to `GameEntity` and assume methods exist. `if target is GameEntity: target.send_message(...)`.
 
-### 2. Fail Fast Rule
-*   **Strictness**: Core systems (Commands, Effects) **MUST NOT** implement fallback logic for optimization.
-*   **Action**: If a target unit does not support the optimization interface (`get_component`), the system must immediately `push_warning` or `push_error` and abort the operation.
-*   **Rationale**: It is better to have a visible error during development than a silent performance killer in production.
+### 2. Clear Responsibility Boundaries
+*   **Strictness**: Core systems (Commands, Effects) **MUST NOT** repair missing collaborators or route around unclear ownership at runtime.
+*   **Action**: If a target unit does not support the required interface (`get_component`), the system must report the missing contract clearly and abort the operation.
+*   **Rationale**: The owner of a dependency should wire it explicitly. Runtime recovery that guesses another owner makes bugs harder to diagnose and can become a silent performance cost.
 
 ## Consequences
 *   **Positive**:
-    *   **Performance**: Interaction logic is consistently O(1).
-    *   **Debuggability**: Configuration errors (forgetting to make a Unit inherit `Unit`) are caught instantly.
+	*   **Performance**: Interaction logic is consistently O(1).
+	*   **Debuggability**: Configuration errors (forgetting to make a Unit inherit `Unit`) are caught instantly.
 *   **Negative**:
-    *   **Rigidity**: All interactive entities *must* extend the `Unit` class (or implement its interface). You cannot just throw a `HealthComponent` on a static wall and expect `DamageEffect` to work unless that wall is arguably a "Unit".
+	*   **Rigidity**: All interactive entities *must* extend the `Unit` class (or implement its interface). You cannot just throw a `HealthComponent` on a static wall and expect `DamageEffect` to work unless that wall is arguably a "Unit".

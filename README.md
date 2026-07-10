@@ -15,7 +15,7 @@ The primary goal is to establish a scalable foundation for large strategy maps. 
 
 2.  **RectangularMapGenerator (Logic Layer)**
     *   A dedicated `Node` component responsible for procedural generation.
-    *   Decoupled from the visual representation; it populates the `TileMapLayer` based on configurable parameters (width, height).
+    *   Decoupled from the visual representation; it populates the `MapModel` through `MapService` based on configurable parameters (width, height).
     *   Follows the Single Responsibility Principle, allowing for future substitution with other generation algorithms (e.g., noise-based terrain).
 
 3.  **CoordinateOverlay (UI/Feedback)**
@@ -33,6 +33,10 @@ The primary goal is to establish a scalable foundation for large strategy maps. 
     *   Contextual and explicit actions both create validated Commands; UI code never mutates gameplay state directly.
 
 The standard `TestLevel` uses a `100 × 100` map (10,000 hexes) so navigation, targeting, and rendering can be exercised beyond a toy-sized board.
+
+### Hex Coordinate Contract
+
+Gameplay state uses canonical axial coordinates `(q, r)` stored in `Vector2i`. Neighbor and distance rules live in the pure `HexCoordinates` utility. Godot's stacked horizontal layout uses odd-row offset indexing, so `HexGridProjection` performs the parity-dependent offset/axial conversion and fails explicitly if the configured layout changes.
 
 ### Architecture: Generic Strategy Engine
 
@@ -71,14 +75,14 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
 ## Technical Specifications
 
 *   **Engine Version**: Godot 4.5+ (Forward Plus renderer).
-*   **Grid System**: Flat-top hexagons.
+*   **Grid System**: Pointy-top hexagons with canonical axial gameplay coordinates and odd-row Godot view projection.
 *   **Aspect Ratio Handling**: The project settings use `canvas_items` stretch mode and `expand` aspect to prevent distortion of the hexagonal geometry on different screen resolutions.
 *   **Code Architecture**: The codebase adheres to SOLID principles, separating data generation from rendering and user interaction.
 
 ## Usage
 
 1.  Open the project in the Godot Editor.
-2.  Run the `scenes/Main.tscn` scene.
+2.  Run the `scenes/TestLevel.tscn` scene.
 3.  Navigate and interact with the map:
     *   Hold `W`, `A`, `S`, or `D` to pan the camera.
     *   Hold the left mouse button on the map and drag to pan. A short left-click still selects or clears a unit.

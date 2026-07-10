@@ -17,7 +17,7 @@ var current_selection: GameEntity
 var armed_action: ActionDescriptor
 
 var _available_actions: Array[ActionDescriptor] = []
-var _units_by_grid_position: Dictionary = {}
+var _unit_index := UnitIndex.new()
 var _tracked_unit_ids: Dictionary = {}
 var _context: GameContext
 
@@ -201,10 +201,13 @@ func _rebuild_unit_index() -> void:
 	if not units_root:
 		push_error("GameController cannot build unit index without units_root.")
 		return
-	_units_by_grid_position.clear()
+	var units: Array[GameEntity] = []
 	for node in units_root.get_children():
 		if node is GameEntity and _track_unit(node):
-			_index_unit(node)
+			units.append(node)
+	var rebuild_result := _unit_index.rebuild(units)
+	if not rebuild_result.is_success():
+		push_error(rebuild_result.error)
 
 func _track_unit(unit: GameEntity) -> bool:
 	var unit_id := unit.get_instance_id()
@@ -221,8 +224,9 @@ func _track_unit(unit: GameEntity) -> bool:
 
 func _on_unit_tree_exiting(unit: GameEntity) -> void:
 	_tracked_unit_ids.erase(unit.get_instance_id())
-	if _units_by_grid_position.get(unit.grid_position) == unit:
-		_units_by_grid_position.erase(unit.grid_position)
+	var removal_result := _unit_index.remove(unit)
+	if not removal_result.is_success():
+		push_error(removal_result.error)
 	if current_selection != unit:
 		return
 	armed_action = null
@@ -231,31 +235,17 @@ func _on_unit_tree_exiting(unit: GameEntity) -> void:
 	targeting_overlay.clear()
 	action_bar.clear()
 
-func _index_unit(unit: GameEntity) -> void:
-	var existing_unit = _units_by_grid_position.get(unit.grid_position)
-	if existing_unit and existing_unit != unit:
-		push_error("Grid position %s is already occupied by %s; cannot index %s." % [unit.grid_position, existing_unit.name, unit.name])
-		return
-	_units_by_grid_position[unit.grid_position] = unit
-
 func _on_unit_moved(data: Dictionary, unit: GameEntity) -> void:
 	if not data.has("from") or not data.has("to"):
 		push_error("GameController expected moved event data with 'from' and 'to'.")
 		return
 	var previous_position: Vector2i = data["from"]
 	var new_position: Vector2i = data["to"]
-	var destination_unit = _units_by_grid_position.get(new_position)
-	if destination_unit and destination_unit != unit:
-		push_error("Cannot index moved unit %s at occupied grid position %s; occupied by %s." % [unit.name, new_position, destination_unit.name])
+	var move_result := _unit_index.move(unit, previous_position, new_position)
+	if not move_result.is_success():
+		push_error(move_result.error)
 		return
 	unit.sync_view_to_local_position(tile_map.axial_to_local(new_position))
-	var indexed_unit = _units_by_grid_position.get(previous_position)
-	if indexed_unit == unit:
-		_units_by_grid_position.erase(previous_position)
-	elif indexed_unit:
-		push_error("Grid position %s is indexed for %s, not moved unit %s." % [previous_position, indexed_unit.name, unit.name])
-		return
-	_index_unit(unit)
 
 func _can_unit_move_to_grid_position(unit: GameEntity, grid_position: Vector2i) -> bool:
 	if not map_service.model.has_tile(grid_position):
@@ -264,7 +254,7 @@ func _can_unit_move_to_grid_position(unit: GameEntity, grid_position: Vector2i) 
 	return not occupying_unit or occupying_unit == unit
 
 func _get_unit_at_grid_position(grid_position: Vector2i) -> GameEntity:
-	return _units_by_grid_position.get(grid_position) as GameEntity
+	return _unit_index.unit_at(grid_position)
 
 func _get_unit_near_world_position(world_position: Vector2, center_grid_position: Vector2i) -> GameEntity:
 	var nearest_unit: GameEntity

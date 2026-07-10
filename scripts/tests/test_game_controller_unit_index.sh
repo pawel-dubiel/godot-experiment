@@ -39,10 +39,15 @@ if grep -q 'get_nodes_in_group("units")' "$script_path"; then
 	exit 1
 fi
 
-grep -q 'var _units_by_grid_position' "$script_path" || {
-	echo "GameController must maintain a grid-position unit index."
+grep -q 'var _unit_index := UnitIndex.new()' "$script_path" || {
+	echo "GameController must delegate occupancy to UnitIndex."
 	exit 1
 }
+
+if grep -q 'var _units_by_grid_position' "$script_path"; then
+	echo "GameController must not own the grid-position dictionary."
+	exit 1
+fi
 
 grep -q 'func _rebuild_unit_index' "$script_path" || {
 	echo "GameController must build the unit index explicitly."
@@ -89,8 +94,8 @@ grep -Fq 'var new_position: Vector2i = data["to"]' "$script_path" || {
 	exit 1
 }
 
-grep -q 'destination_unit = _units_by_grid_position.get(new_position)' "$script_path" || {
-	echo "GameController movement index updates must reject occupied destinations before mutating the index."
+grep -q '_unit_index.move(unit, previous_position, new_position)' "$script_path" || {
+	echo "GameController movement updates must delegate occupancy invariants to UnitIndex."
 	exit 1
 }
 

@@ -20,7 +20,7 @@ func _run() -> void:
 	var started := Time.get_ticks_usec()
 	action_bar.action_selected.emit(&"move")
 	var elapsed_usec := Time.get_ticks_usec() - started
-	var cached_candidates: int = overlay._valid_cells.size()
+	var cached_candidates: int = overlay._valid_axial_cells.size()
 	_expect(cached_candidates > 0 and cached_candidates <= 37, "Move targeting must cache no more than its 37 radius-3 candidates; got %d." % cached_candidates)
 	_expect(elapsed_usec < 10_000, "Move targeting must rebuild within 10 ms on the 100x100 level; took %d microseconds." % elapsed_usec)
 

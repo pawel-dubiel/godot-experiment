@@ -7,13 +7,10 @@ const BLOCKED_EDGE := Color(0.9, 0.34, 0.25, 0.9)
 
 @export_range(8.0, 80.0, 1.0) var hex_radius := 42.0
 
-var _descriptor: ActionDescriptor
-var _context: GameContext
-var _map_service: MapService
-var _tile_map: HexGridView
-var _target_provider: Callable
-var _valid_cells: Dictionary = {}
-var _last_hovered_cell := Vector2i(2147483647, 2147483647)
+var _session: TargetingSession
+var _valid_axial_cells: Dictionary = {}
+var _has_hovered_cell := false
+var _hovered_cell: Vector2i
 
 func _ready() -> void:
 	z_index = 20
@@ -21,18 +18,12 @@ func _ready() -> void:
 	visible = false
 
 func present(descriptor: ActionDescriptor, context: GameContext, map_service: MapService, tile_map: HexGridView, target_provider: Callable) -> bool:
-	if not descriptor:
-		push_error("TargetingOverlay.present requires an ActionDescriptor.")
+	var session_result := TargetingSession.create(descriptor, context, map_service, tile_map, target_provider)
+	if not session_result.is_success():
+		push_error(session_result.error)
 		return false
-	if not context or not map_service or not tile_map or not target_provider.is_valid():
-		push_error("TargetingOverlay.present requires context, map_service, tile_map, and target_provider.")
-		return false
-	_descriptor = descriptor
-	_context = context
-	_map_service = map_service
-	_tile_map = tile_map
-	_target_provider = target_provider
-	_last_hovered_cell = Vector2i(2147483647, 2147483647)
+	_session = session_result.value
+	_has_hovered_cell = false
 	if not _rebuild_valid_cell_cache():
 		clear()
 		return false
@@ -41,13 +32,9 @@ func present(descriptor: ActionDescriptor, context: GameContext, map_service: Ma
 	return true
 
 func clear() -> void:
-	_descriptor = null
-	_context = null
-	_map_service = null
-	_tile_map = null
-	_target_provider = Callable()
-	_valid_cells.clear()
-	_last_hovered_cell = Vector2i(2147483647, 2147483647)
+	_session = null
+	_valid_axial_cells.clear()
+	_has_hovered_cell = false
 	visible = false
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 	queue_redraw()
@@ -55,51 +42,55 @@ func clear() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
-	var hovered_cell := _tile_map.local_to_axial(_tile_map.to_local(get_global_mouse_position()))
-	if hovered_cell != _last_hovered_cell:
-		_last_hovered_cell = hovered_cell
+	var hovered_cell := _session.tile_map.local_to_axial(_session.tile_map.to_local(get_global_mouse_position()))
+	if not _has_hovered_cell or hovered_cell != _hovered_cell:
+		_hovered_cell = hovered_cell
+		_has_hovered_cell = true
 		_update_cursor_shape()
 		queue_redraw()
 
 func _update_cursor_shape() -> void:
-	if not _map_service.model.has_tile(_last_hovered_cell):
+	if not _session.map_service.model.has_tile(_hovered_cell):
 		Input.set_default_cursor_shape(Input.CURSOR_FORBIDDEN)
 		return
-	var cursor := Input.CURSOR_POINTING_HAND if _valid_cells.has(_last_hovered_cell) else Input.CURSOR_FORBIDDEN
+	var cursor := Input.CURSOR_POINTING_HAND if _valid_axial_cells.has(_hovered_cell) else Input.CURSOR_FORBIDDEN
 	Input.set_default_cursor_shape(cursor)
 
 func _rebuild_valid_cell_cache() -> bool:
-	_valid_cells.clear()
-	var candidate_result := _descriptor.get_candidate_coordinates(_context)
+	_valid_axial_cells.clear()
+	var candidate_result := _session.descriptor.get_candidate_coordinates(_session.context)
 	if not candidate_result.is_success():
 		push_error(candidate_result.error)
 		return false
 	var candidate_coordinates: Array[Vector2i] = candidate_result.value
-	for coord in candidate_coordinates:
-		if not _map_service.model.has_tile(coord):
+	for coordinate in candidate_coordinates:
+		if not _session.map_service.model.has_tile(coordinate):
 			continue
-		var target := MapActionTarget.new(coord, _target_provider.call(coord))
-		var target_validation := _descriptor.validate_target(target, _context)
+		var target_result := _session.target_at(coordinate)
+		if not target_result.is_success():
+			push_error(target_result.error)
+			return false
+		var target_validation := _session.descriptor.validate_target(target_result.value, _session.context)
 		if not target_validation.is_success():
 			push_error(target_validation.error)
 			return false
 		if target_validation.value:
-			_valid_cells[coord] = true
+			_valid_axial_cells[coordinate] = true
 	return true
 
 func _draw() -> void:
-	if not visible or not _descriptor:
+	if not visible or not _session:
 		return
-	for coord_value in _valid_cells.keys():
-		var coord: Vector2i = coord_value
-		var center := _tile_map.axial_to_local(coord)
+	for coordinate_value in _valid_axial_cells.keys():
+		var coordinate: Vector2i = coordinate_value
+		var center := _session.tile_map.axial_to_local(coordinate)
 		var points := _hex_points(center)
 		draw_colored_polygon(points, VALID_FILL)
 		draw_polyline(PackedVector2Array(Array(points) + [points[0]]), VALID_EDGE, 2.0, true)
 
-	if _map_service.model.has_tile(_last_hovered_cell):
-		var edge := VALID_EDGE if _valid_cells.has(_last_hovered_cell) else BLOCKED_EDGE
-		var hovered_points := _hex_points(_tile_map.axial_to_local(_last_hovered_cell))
+	if _has_hovered_cell and _session.map_service.model.has_tile(_hovered_cell):
+		var edge := VALID_EDGE if _valid_axial_cells.has(_hovered_cell) else BLOCKED_EDGE
+		var hovered_points := _hex_points(_session.tile_map.axial_to_local(_hovered_cell))
 		draw_polyline(PackedVector2Array(Array(hovered_points) + [hovered_points[0]]), edge, 4.0, true)
 
 func _hex_points(center: Vector2) -> PackedVector2Array:

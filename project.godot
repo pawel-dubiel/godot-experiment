@@ -42,3 +42,11 @@ camera_right={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":68,"unicode":100)]
 }
+camera_zoom_in={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"shift_pressed":true,"physical_keycode":61,"unicode":43)]
+}
+camera_zoom_out={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":45,"unicode":45)]
+}

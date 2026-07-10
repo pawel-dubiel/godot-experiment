@@ -10,7 +10,7 @@ signal camera_zoom_requested(factor: float, screen_anchor: Vector2)
 
 @export_range(1.0, 64.0, 1.0) var drag_threshold_pixels := 8.0
 @export_range(1.001, 2.0, 0.001) var wheel_zoom_factor := 1.1
-@export_range(0.01, 10.0, 0.01) var touchpad_pan_scale := 1.0
+@export_range(1.001, 2.0, 0.001) var trackpad_zoom_factor := 1.08
 
 var _left_pressed := false
 var _dragging := false
@@ -41,16 +41,32 @@ func handle_event(event: InputEvent) -> bool:
 		camera_zoom_requested.emit(event.factor, event.position)
 		return true
 	if event is InputEventPanGesture:
-		camera_pan_requested.emit(event.delta * touchpad_pan_scale)
-		return true
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
-		targeting_cancel_requested.emit()
-		return true
+		return _handle_trackpad_scroll(event)
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.is_action_pressed(&"camera_zoom_in"):
+			camera_zoom_requested.emit(wheel_zoom_factor, _window_center())
+			return true
+		if event.is_action_pressed(&"camera_zoom_out"):
+			camera_zoom_requested.emit(1.0 / wheel_zoom_factor, _window_center())
+			return true
+		if event.keycode == KEY_ESCAPE:
+			targeting_cancel_requested.emit()
+			return true
 	return false
 
 func compose_keyboard_direction(left: float, right: float, up: float, down: float) -> Vector2:
 	var direction := Vector2(right - left, down - up)
 	return direction.normalized() if direction.length_squared() > 1.0 else direction
+
+func _handle_trackpad_scroll(event: InputEventPanGesture) -> bool:
+	if is_zero_approx(event.delta.y) or absf(event.delta.y) <= absf(event.delta.x):
+		return false
+	var factor := pow(trackpad_zoom_factor, -event.delta.y)
+	camera_zoom_requested.emit(factor, event.position)
+	return true
+
+func _window_center() -> Vector2:
+	return Vector2(DisplayServer.window_get_size()) * 0.5
 
 func _handle_mouse_button(event: InputEventMouseButton) -> bool:
 	if event.button_index == MOUSE_BUTTON_LEFT:

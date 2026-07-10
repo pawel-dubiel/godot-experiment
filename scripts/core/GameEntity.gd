@@ -10,9 +10,8 @@ var _components: Dictionary = {}
 # Message Bus: Map[String, Array[Callable]]
 var _subscribers: Dictionary = {}
 
-# Core property for Map positioning
+# Canonical axial (q, r) position. x = q, y = r.
 @export var grid_position: Vector2i = Vector2i(0, 0)
-@export var tile_map: TileMapLayer
 @export var is_selected := false:
 	set(value):
 		if is_selected == value:
@@ -29,6 +28,7 @@ var _subscribers: Dictionary = {}
 		_update_visual_orientation()
 
 var _selection_indicator: Line2D
+var _view_position_initialized := false
 
 func _ready() -> void:
 	z_index = 10 # Force on top
@@ -36,33 +36,18 @@ func _ready() -> void:
 	add_to_group("units")
 	_ensure_selection_indicator()
 
-	if tile_map:
-		_snap_to_grid()
-
-func set_tile_map(value: TileMapLayer) -> bool:
-	if not value:
-		push_error("GameEntity %s requires a TileMapLayer for grid positioning." % name)
-		return false
-
-	tile_map = value
-	return _snap_to_grid()
-
-func _snap_to_grid() -> bool:
-	if not tile_map:
-		push_error("GameEntity %s cannot snap to grid without tile_map." % name)
-		return false
-
-	position = tile_map.map_to_local(grid_position)
-	_update_visual_orientation()
+func move_to_grid_position(new_position: Vector2i) -> bool:
+	grid_position = new_position
 	return true
 
-func move_to_grid_position(new_position: Vector2i) -> bool:
-	if not tile_map:
-		push_error("GameEntity %s cannot move to grid position without tile_map." % name)
-		return false
+func sync_view_to_local_position(local_position: Vector2) -> void:
+	if not _view_position_initialized:
+		position = local_position
+		_view_position_initialized = true
+		_update_visual_orientation()
+		return
 
-	var local_pos = tile_map.map_to_local(new_position)
-	var diff = local_pos - position
+	var diff := local_position - position
 	if diff.length_squared() > 0.1:
 		var angle = diff.angle()
 		var deg = rad_to_deg(angle)
@@ -71,9 +56,7 @@ func move_to_grid_position(new_position: Vector2i) -> bool:
 
 		orientation = int(round(deg / 60.0)) % 6
 
-	grid_position = new_position
-	position = local_pos
-	return true
+	position = local_position
 
 func _update_visual_orientation() -> void:
 	# Rotate the Visuals node if present

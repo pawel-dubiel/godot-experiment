@@ -10,7 +10,7 @@ const BLOCKED_EDGE := Color(0.9, 0.34, 0.25, 0.9)
 var _descriptor: ActionDescriptor
 var _context: GameContext
 var _map_service: MapService
-var _tile_map: TileMapLayer
+var _tile_map: HexGridView
 var _target_provider: Callable
 var _valid_cells: Dictionary = {}
 var _last_hovered_cell := Vector2i(2147483647, 2147483647)
@@ -20,7 +20,7 @@ func _ready() -> void:
 	z_as_relative = false
 	visible = false
 
-func present(descriptor: ActionDescriptor, context: GameContext, map_service: MapService, tile_map: TileMapLayer, target_provider: Callable) -> bool:
+func present(descriptor: ActionDescriptor, context: GameContext, map_service: MapService, tile_map: HexGridView, target_provider: Callable) -> bool:
 	if not descriptor:
 		push_error("TargetingOverlay.present requires an ActionDescriptor.")
 		return false
@@ -55,7 +55,7 @@ func clear() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
-	var hovered_cell := _tile_map.local_to_map(_tile_map.to_local(get_global_mouse_position()))
+	var hovered_cell := _tile_map.local_to_axial(_tile_map.to_local(get_global_mouse_position()))
 	if hovered_cell != _last_hovered_cell:
 		_last_hovered_cell = hovered_cell
 		_update_cursor_shape()
@@ -85,14 +85,14 @@ func _draw() -> void:
 		return
 	for coord_value in _valid_cells.keys():
 		var coord: Vector2i = coord_value
-		var center := _tile_map.map_to_local(coord)
+		var center := _tile_map.axial_to_local(coord)
 		var points := _hex_points(center)
 		draw_colored_polygon(points, VALID_FILL)
 		draw_polyline(PackedVector2Array(Array(points) + [points[0]]), VALID_EDGE, 2.0, true)
 
 	if _map_service.model.has_tile(_last_hovered_cell):
 		var edge := VALID_EDGE if _valid_cells.has(_last_hovered_cell) else BLOCKED_EDGE
-		var hovered_points := _hex_points(_tile_map.map_to_local(_last_hovered_cell))
+		var hovered_points := _hex_points(_tile_map.axial_to_local(_last_hovered_cell))
 		draw_polyline(PackedVector2Array(Array(hovered_points) + [hovered_points[0]]), edge, 4.0, true)
 
 func _hex_points(center: Vector2) -> PackedVector2Array:

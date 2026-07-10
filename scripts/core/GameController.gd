@@ -2,7 +2,7 @@ class_name GameController
 extends Node
 
 @export var map_service: MapService
-@export var tile_map: TileMapLayer
+@export var tile_map: HexGridView
 @export var units_root: Node
 @export var input_router: MapInputRouter
 @export var camera_control: CameraControl
@@ -196,7 +196,7 @@ func _screen_to_world(screen_position: Vector2) -> Vector2:
 	return tile_map.get_canvas_transform().affine_inverse() * screen_position
 
 func _get_grid_position_for_world_position(world_position: Vector2) -> Vector2i:
-	return tile_map.local_to_map(tile_map.to_local(world_position))
+	return tile_map.local_to_axial(tile_map.to_local(world_position))
 
 func _rebuild_unit_index() -> void:
 	if not units_root:
@@ -211,8 +211,7 @@ func _track_unit(unit: GameEntity) -> bool:
 	var unit_id := unit.get_instance_id()
 	if _tracked_unit_ids.has(unit_id):
 		return true
-	if not unit.set_tile_map(tile_map):
-		return false
+	unit.sync_view_to_local_position(tile_map.axial_to_local(unit.grid_position))
 	var movement_component := unit.get_component(MovementComponent) as MovementComponent
 	if movement_component:
 		movement_component.set_move_validator(Callable(self, "_can_unit_move_to_grid_position"))
@@ -250,6 +249,7 @@ func _on_unit_moved(data: Dictionary, unit: GameEntity) -> void:
 	if destination_unit and destination_unit != unit:
 		push_error("Cannot index moved unit %s at occupied grid position %s; occupied by %s." % [unit.name, new_position, destination_unit.name])
 		return
+	unit.sync_view_to_local_position(tile_map.axial_to_local(new_position))
 	var indexed_unit = _units_by_grid_position.get(previous_position)
 	if indexed_unit == unit:
 		_units_by_grid_position.erase(previous_position)

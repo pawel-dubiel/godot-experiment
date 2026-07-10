@@ -8,7 +8,7 @@ extends Node2D
 		if is_node_ready():
 			_sync_debug_state()
 
-@export var tile_map: TileMapLayer
+@export var tile_map: HexGridView
 @export var camera: Camera2D
 @export var map_service: MapService
 @export var viewport_margin := Vector2(200, 200)
@@ -159,7 +159,7 @@ func _rebuild_coordinate_cache() -> void:
 						_label_limit_warning_shown = true
 					return
 
-				var world_pos = tile_map.to_global(tile_map.map_to_local(coords))
+				var world_pos = tile_map.to_global(tile_map.axial_to_local(coords))
 				# Center the text
 				var text_pos = world_pos + Vector2(-20, 5)
 				_coordinate_draw_entries.append({

@@ -9,8 +9,8 @@ grep -q '@export var map_service: MapService' "$script_path" || {
 	exit 1
 }
 
-grep -q '@export var tile_map: TileMapLayer' "$script_path" || {
-	echo "GameController must receive TileMapLayer as an explicit exported dependency."
+grep -q '@export var tile_map: HexGridView' "$script_path" || {
+	echo "GameController must receive HexGridView as an explicit exported dependency."
 	exit 1
 }
 

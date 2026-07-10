@@ -4,23 +4,18 @@ set -euo pipefail
 entity_script="${1:-scripts/core/GameEntity.gd}"
 movement_script="${2:-scripts/components/MovementComponent.gd}"
 
-if grep -q 'get_first_node_in_group("grid_view")' "$entity_script" "$movement_script"; then
-	echo "Grid-dependent unit code must not discover grid_view globally."
+if grep -qE 'get_first_node_in_group\("grid_view"\)|TileMapLayer|HexGridView' "$entity_script" "$movement_script"; then
+	echo "Entity and movement model code must not depend on a Godot grid view."
 	exit 1
 fi
 
-grep -q '@export var tile_map: TileMapLayer' "$entity_script" || {
-	echo "GameEntity must receive TileMapLayer explicitly."
-	exit 1
-}
-
-grep -q 'func set_tile_map' "$entity_script" || {
-	echo "GameEntity must expose set_tile_map() for scene/controller wiring."
+grep -q 'func sync_view_to_local_position' "$entity_script" || {
+	echo "GameEntity must accept already-projected local positions for visual synchronization."
 	exit 1
 }
 
 grep -q 'func move_to_grid_position' "$entity_script" || {
-	echo "GameEntity must own grid-to-world visual synchronization."
+	echo "GameEntity must own axial state mutation."
 	exit 1
 }
 

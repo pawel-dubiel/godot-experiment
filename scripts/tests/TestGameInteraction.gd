@@ -21,7 +21,7 @@ func _run() -> void:
 	var router: MapInputRouter = level.get_node("MapInputRouter")
 	var action_bar: ActionBar = level.get_node("ActionBar")
 	var overlay: TargetingOverlay = level.get_node("TargetingOverlay")
-	var tile_map: TileMapLayer = level.get_node("HexGridView")
+	var tile_map: HexGridView = level.get_node("HexGridView")
 	var soldier: GameEntity = level.get_node("Soldier")
 	var tank: GameEntity = level.get_node("Tank")
 	var camera: CameraControl = level.get_node("Camera2D")
@@ -61,10 +61,10 @@ func _run() -> void:
 	_expect(controller.current_selection == soldier, "Invalid explicit-target cancellation must preserve selection.")
 
 	var destination := Vector2i(6, 2)
-	var destination_center := tile_map.get_global_transform_with_canvas() * tile_map.map_to_local(destination)
+	var destination_center := tile_map.get_global_transform_with_canvas() * tile_map.axial_to_local(destination)
 	var destination_screen := soldier_screen.lerp(destination_center, 0.55)
 	var clicked_world := tile_map.get_canvas_transform().affine_inverse() * destination_screen
-	var clicked_cell := tile_map.local_to_map(tile_map.to_local(clicked_world))
+	var clicked_cell := tile_map.local_to_axial(tile_map.to_local(clicked_world))
 	_expect(clicked_cell == destination, "The boundary test point must be inside the destination cell.")
 	router.handle_event(_mouse_button(MOUSE_BUTTON_RIGHT, true, destination_screen))
 	_expect(soldier.grid_position == destination, "Context actions must use exact cell occupancy rather than tolerant adjacent-unit picking.")

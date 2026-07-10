@@ -65,6 +65,7 @@ contextual_action_resolver = NodePath("../ContextualActionResolver")
 command_executor = NodePath("../CommandExecutor")
 action_bar = NodePath("../ActionBar")
 targeting_overlay = NodePath("../TargetingOverlay")
+random_seed = 12345
 
 [node name="Soldier" parent="." instance=ExtResource("5")]
 grid_position = Vector2i(5, 2)

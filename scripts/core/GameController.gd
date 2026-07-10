@@ -12,6 +12,7 @@ extends Node
 @export var action_bar: ActionBar
 @export var targeting_overlay: TargetingOverlay
 @export var selection_pick_radius := 45.0
+@export var random_seed: int = -1
 
 var current_selection: GameEntity
 var armed_action: ActionDescriptor
@@ -24,7 +25,7 @@ var _context: GameContext
 func _ready() -> void:
 	if not _resolve_dependencies():
 		return
-	_context = GameContext.new(map_service)
+	_context = GameContext.new(map_service, null, SeededRandomSource.new(random_seed))
 	_connect_interaction_boundaries()
 	call_deferred("_rebuild_unit_index")
 
@@ -50,6 +51,8 @@ func _resolve_dependencies() -> bool:
 		missing.append("action_bar")
 	if not targeting_overlay:
 		missing.append("targeting_overlay")
+	if random_seed < 0:
+		missing.append("random_seed (must be non-negative)")
 	if not missing.is_empty():
 		push_error("GameController requires explicit dependencies: %s." % ", ".join(missing))
 		return false

@@ -6,8 +6,9 @@ extends RefCounted
 
 var map_service: MapService
 var turn_manager: TurnManager
-# Add other services here as needed (e.g. FactionManager, FXManager)
+var random_source: RandomSource
 
-func _init(p_map_service: MapService = null, p_turn_manager: TurnManager = null) -> void:
+func _init(p_map_service: MapService = null, p_turn_manager: TurnManager = null, p_random_source: RandomSource = null) -> void:
 	map_service = p_map_service
 	turn_manager = p_turn_manager
+	random_source = p_random_source

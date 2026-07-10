@@ -12,6 +12,10 @@ func collect(entity: GameEntity, context: GameContext) -> Dictionary:
 	for component in entity.get_registered_components():
 		if not component.has_method("get_action_descriptors"):
 			continue
+		if component.has_method("validate_action_provider_contract"):
+			var provider_error: String = component.validate_action_provider_contract()
+			if not provider_error.is_empty():
+				return _error("Action provider %s: %s" % [component.name, provider_error])
 		var provided_actions = component.get_action_descriptors(context)
 		if not provided_actions is Array:
 			return _error("Action provider %s must return an Array." % component.name)

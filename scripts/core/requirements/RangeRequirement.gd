@@ -7,20 +7,24 @@ extends Requirement
 @export var min_range: int = 1
 @export var max_range: int = 1
 
+func validate_contract() -> String:
+	if min_range < 0:
+		return "RangeRequirement min_range must be non-negative."
+	if max_range < min_range:
+		return "RangeRequirement max_range must be at least min_range."
+	return ""
+
 func check(context: GameContext, source: Node, target: Node) -> bool:
-	if not context.map_service:
+	var contract_error := validate_contract()
+	if not contract_error.is_empty():
+		push_error(contract_error)
 		return false
-		
-	# Assuming source and target are Units (Nodes) that have a 'grid_position' property
-	# or are located at a certain position known by the MapService.
-	# For simplicity in this architecture, let's assume Units have a 'grid_position' property.
-	
-	var source_pos = source.get("grid_position")
-	var target_pos = target.get("grid_position")
-	
-	if source_pos == null or target_pos == null:
-		push_warning("RangeRequirement: Source or Target missing grid_position")
+	if not context or not context.map_service:
+		push_error("RangeRequirement requires GameContext.map_service.")
+		return false
+	if not source is GameEntity or not target is GameEntity:
+		push_error("RangeRequirement requires GameEntity source and target.")
 		return false
 
-	var distance = context.map_service.get_distance(source_pos, target_pos)
+	var distance := context.map_service.get_distance(source.grid_position, target.grid_position)
 	return distance >= min_range and distance <= max_range

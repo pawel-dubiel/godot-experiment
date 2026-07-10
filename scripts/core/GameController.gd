@@ -76,11 +76,11 @@ func _handle_context_action(screen_position: Vector2) -> void:
 		return
 	var target := _get_action_target(screen_position)
 	if armed_action:
-		var valid_target := armed_action.is_valid_target(target, _context)
-		if not armed_action.last_contract_error.is_empty():
-			action_bar.show_feedback(armed_action.last_contract_error, true)
+		var target_validation := armed_action.validate_target(target, _context)
+		if not target_validation.is_success():
+			action_bar.show_feedback(target_validation.error, true)
 			return
-		if not valid_target:
+		if not target_validation.value:
 			_cancel_targeting()
 			action_bar.show_feedback("Action cancelled · target unavailable")
 			return
@@ -106,12 +106,13 @@ func _handle_action_selected(action_id: StringName) -> void:
 	if not descriptor:
 		push_error("Selected unit %s does not provide action '%s'." % [current_selection.name, action_id])
 		return
-	var available := descriptor.is_available(_context)
-	if not descriptor.last_contract_error.is_empty():
-		action_bar.show_feedback(descriptor.last_contract_error, true)
+	var availability := descriptor.availability(_context)
+	if not availability.is_success():
+		action_bar.show_feedback(availability.error, true)
 		return
-	if not available:
-		action_bar.show_feedback(descriptor.get_unavailable_reason(_context), true)
+	if not availability.value:
+		var unavailable_reason := descriptor.get_unavailable_reason(_context)
+		action_bar.show_feedback(unavailable_reason.error if not unavailable_reason.is_success() else unavailable_reason.value, true)
 		return
 	if descriptor.targeting_mode == ActionDescriptor.TargetingMode.NONE:
 		_execute_action(descriptor, null)
@@ -125,13 +126,11 @@ func _handle_action_selected(action_id: StringName) -> void:
 	_refresh_action_bar()
 
 func _execute_action(descriptor: ActionDescriptor, target: Variant) -> void:
-	var command := descriptor.create_command(target, _context)
-	if not descriptor.last_contract_error.is_empty():
-		action_bar.show_feedback(descriptor.last_contract_error, true)
+	var command_result := descriptor.create_command(target, _context)
+	if not command_result.is_success():
+		action_bar.show_feedback(command_result.error, true)
 		return
-	if not command:
-		action_bar.show_feedback("%s could not create its command." % descriptor.display_name, true)
-		return
+	var command: Command = command_result.value
 	if not command_executor.execute(command, _context):
 		action_bar.show_feedback("%s is no longer valid." % descriptor.display_name)
 		return

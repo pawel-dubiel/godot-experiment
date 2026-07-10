@@ -70,17 +70,20 @@ func _update_cursor_shape() -> void:
 
 func _rebuild_valid_cell_cache() -> bool:
 	_valid_cells.clear()
-	var candidate_coordinates := _descriptor.get_candidate_coordinates(_context)
-	if not _descriptor.last_contract_error.is_empty():
+	var candidate_result := _descriptor.get_candidate_coordinates(_context)
+	if not candidate_result.is_success():
+		push_error(candidate_result.error)
 		return false
+	var candidate_coordinates: Array[Vector2i] = candidate_result.value
 	for coord in candidate_coordinates:
 		if not _map_service.model.has_tile(coord):
 			continue
 		var target := MapActionTarget.new(coord, _target_provider.call(coord))
-		var valid := _descriptor.is_valid_target(target, _context)
-		if not _descriptor.last_contract_error.is_empty():
+		var target_validation := _descriptor.validate_target(target, _context)
+		if not target_validation.is_success():
+			push_error(target_validation.error)
 			return false
-		if valid:
+		if target_validation.value:
 			_valid_cells[coord] = true
 	return true
 

@@ -9,32 +9,26 @@ extends EntityComponent
 
 const ATTACK_ICON := preload("res://assets/ui/action-attack.svg")
 
-## Returns a list of available commands for this unit.
-## In a full UI implementation, the UI would call this when the unit is selected.
+## Returns the actions exposed by this component for the selected unit.
 func get_action_descriptors(_context: GameContext) -> Array[ActionDescriptor]:
 	var descriptor := ActionDescriptor.new(
 		&"attack",
 		"Attack",
 		ATTACK_ICON,
 		ActionDescriptor.TargetingMode.UNIT,
-		func(_current_context): return true,
-		func(_current_context): return "",
-		func(_current_context): return _get_candidate_coordinates(),
-		func(target, current_context): return _is_valid_action_target(target, current_context),
-		func(target, current_context): return _is_valid_action_target(target, current_context),
-		func(target, _current_context): return create_attack_command(target.entity) if target is MapActionTarget and target.entity else null
+		AttackActionBehavior.new(self)
 	)
 	return [descriptor]
 
-func _get_candidate_coordinates() -> Variant:
+func get_candidate_coordinates() -> ActionResult:
 	var entity := get_entity() as GameEntity
 	if not entity:
-		return "AttackComponent requires a GameEntity parent to enumerate candidates."
+		return ActionResult.failure("AttackComponent requires a GameEntity parent to enumerate candidates.")
 	if attack_range < 0:
-		return "AttackComponent attack_range must be non-negative."
-	return HexCoordinates.within_range(entity.grid_position, attack_range)
+		return ActionResult.failure("AttackComponent attack_range must be non-negative.")
+	return ActionResult.success(HexCoordinates.within_range(entity.grid_position, attack_range))
 
-func _is_valid_action_target(target: Variant, context: GameContext) -> bool:
+func is_valid_action_target(target: Variant, context: GameContext) -> bool:
 	if not target is MapActionTarget or not target.entity or target.entity == get_entity():
 		return false
 	return create_attack_command(target.entity).validate(context)

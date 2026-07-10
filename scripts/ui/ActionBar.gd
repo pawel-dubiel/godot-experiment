@@ -147,14 +147,23 @@ func _create_action_button(descriptor: ActionDescriptor, shortcut_number: int, a
 	button.add_theme_stylebox_override("pressed", _button_style(COLOR_BRASS, COLOR_BRASS, 2))
 	button.add_theme_stylebox_override("disabled", _button_style(Color("1b2420"), Color("39433b"), 1))
 
-	var available := descriptor.is_available(_context)
-	button.disabled = not available
-	if not available:
+	var availability := descriptor.availability(_context)
+	if not availability.is_success():
+		push_error(availability.error)
+		button.disabled = true
+		button.tooltip_text = availability.error
+		return button
+	button.disabled = not availability.value
+	if not availability.value:
 		var reason := descriptor.get_unavailable_reason(_context)
-		if reason.strip_edges().is_empty():
+		if not reason.is_success():
+			push_error(reason.error)
+			button.tooltip_text = reason.error
+			return button
+		if reason.value.strip_edges().is_empty():
 			push_error("Unavailable action %s requires a player-facing reason." % descriptor.action_id)
 			return button
-		button.tooltip_text = reason
+		button.tooltip_text = reason.value
 	else:
 		button.tooltip_text = "%s · choose target" % descriptor.display_name
 	button.pressed.connect(func(): action_selected.emit(descriptor.action_id))

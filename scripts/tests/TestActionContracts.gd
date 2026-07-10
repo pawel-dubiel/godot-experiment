@@ -1,6 +1,7 @@
 extends SceneTree
 
 const ActionDescriptorScript = preload("res://scripts/actions/ActionDescriptor.gd")
+const ActionBehaviorScript = preload("res://scripts/actions/ActionBehavior.gd")
 const ActionCatalogScript = preload("res://scripts/actions/ActionCatalog.gd")
 const ContextualActionResolverScript = preload("res://scripts/actions/ContextualActionResolver.gd")
 const CommandExecutorScript = preload("res://scripts/actions/CommandExecutor.gd")
@@ -22,6 +23,35 @@ class TestCommand extends Command:
 		else:
 			executed.emit()
 
+class TestBehavior extends ActionBehaviorScript:
+	var contextual_matcher: Callable
+	var available := true
+	var unavailable_reason := ""
+
+	func _init(p_contextual_matcher: Callable) -> void:
+		contextual_matcher = p_contextual_matcher
+
+	func availability(_context: GameContext) -> ActionResult:
+		return ActionResult.success(available)
+
+	func get_unavailable_reason(_context: GameContext) -> ActionResult:
+		return ActionResult.success(unavailable_reason)
+
+	func get_candidate_coordinates(_context: GameContext) -> ActionResult:
+		return ActionResult.success([Vector2i.ZERO])
+
+	func matches_context(target: Variant, context: GameContext) -> ActionResult:
+		return ActionResult.success(contextual_matcher.call(target, context))
+
+	func validate_target(_target: Variant, _context: GameContext) -> ActionResult:
+		return ActionResult.success(true)
+
+	func create_command(_target: Variant, _context: GameContext) -> ActionResult:
+		return ActionResult.success(TestCommand.new())
+
+class IncompleteBehavior extends ActionBehaviorScript:
+	pass
+
 class TestProvider extends Node:
 	var descriptors: Array = []
 
@@ -38,6 +68,7 @@ var _failures: Array[String] = []
 
 func _initialize() -> void:
 	_test_descriptor_contract()
+	_test_incomplete_behavior_returns_explicit_error()
 	_test_catalog_rejects_duplicate_ids()
 	_test_catalog_rejects_missing_disabled_reason()
 	_test_contextual_resolution_is_unambiguous()
@@ -58,8 +89,22 @@ func _initialize() -> void:
 func _test_descriptor_contract() -> void:
 	var descriptor = _descriptor(&"move", func(_target, _context): return true)
 	_expect(descriptor.validate_contract().is_empty(), "A complete descriptor must satisfy its contract.")
-	_expect(descriptor.is_available(null), "The descriptor must delegate availability.")
-	_expect(descriptor.matches_context(Vector2i.ZERO, null), "The descriptor must delegate contextual matching.")
+	var availability: ActionResult = descriptor.availability(null)
+	_expect(availability.is_success() and availability.value == true, "The descriptor must delegate availability.")
+	var contextual_match: ActionResult = descriptor.matches_context(Vector2i.ZERO, null)
+	_expect(contextual_match.is_success() and contextual_match.value == true, "The descriptor must delegate contextual matching.")
+
+func _test_incomplete_behavior_returns_explicit_error() -> void:
+	var descriptor := ActionDescriptorScript.new(
+		&"incomplete",
+		"Incomplete",
+		preload("res://icon.svg"),
+		ActionDescriptorScript.TargetingMode.HEX,
+		IncompleteBehavior.new()
+	)
+	var result: ActionResult = descriptor.get_candidate_coordinates(null)
+	_expect(not result.is_success(), "Missing action behavior methods must return an explicit error.")
+	_expect("get_candidate_coordinates" in result.error, "Behavior errors must identify the missing contract method.")
 
 func _test_catalog_rejects_duplicate_ids() -> void:
 	var provider := TestProvider.new()
@@ -76,17 +121,14 @@ func _test_catalog_rejects_duplicate_ids() -> void:
 
 func _test_catalog_rejects_missing_disabled_reason() -> void:
 	var provider := TestProvider.new()
+	var behavior := TestBehavior.new(func(_target, _context): return false)
+	behavior.available = false
 	provider.descriptors = [ActionDescriptorScript.new(
 		&"wait",
 		"Wait",
 		preload("res://icon.svg"),
 		ActionDescriptorScript.TargetingMode.NONE,
-		func(_context): return false,
-		func(_context): return "",
-		func(_context): return [Vector2i.ZERO],
-		func(_target, _context): return false,
-		func(_target, _context): return false,
-		func(_target, _context): return TestCommand.new()
+		behavior
 	)]
 	var entity := TestEntity.new()
 	entity.registered_components = [provider]
@@ -120,15 +162,10 @@ func _test_malformed_candidate_provider_is_configuration_error() -> void:
 		"Broken candidates",
 		preload("res://icon.svg"),
 		ActionDescriptorScript.TargetingMode.HEX,
-		func(_context): return true,
-		func(_context): return "",
-		func(_context): return "not an array",
-		func(_target, _context): return false,
-		func(_target, _context): return false,
-		func(_target, _context): return TestCommand.new()
+		IncompleteBehavior.new()
 	)
-	_expect(malformed.get_candidate_coordinates(null).is_empty(), "Malformed candidate providers must abort with an empty result.")
-	_expect(not malformed.last_contract_error.is_empty(), "Malformed candidate providers must expose an explicit contract error.")
+	var result: ActionResult = malformed.get_candidate_coordinates(null)
+	_expect(not result.is_success(), "Malformed candidate providers must return an explicit error result.")
 
 func _test_executor_validates_before_execution() -> void:
 	var executor = CommandExecutorScript.new()
@@ -155,12 +192,7 @@ func _descriptor(id: StringName, contextual_matcher: Callable):
 		String(id).capitalize(),
 		preload("res://icon.svg"),
 		ActionDescriptorScript.TargetingMode.HEX,
-		func(_context): return true,
-		func(_context): return "",
-		func(_context): return [Vector2i.ZERO],
-		contextual_matcher,
-		func(_target, _context): return true,
-		func(_target, _context): return TestCommand.new()
+		TestBehavior.new(contextual_matcher)
 	)
 
 func _expect(condition: bool, message: String) -> void:

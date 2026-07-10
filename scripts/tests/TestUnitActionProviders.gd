@@ -33,13 +33,15 @@ func _test_movement_provider_contract() -> void:
 	_expect(descriptor.icon != null, "Movement action must provide an explicit icon.")
 	_expect(descriptor.targeting_mode == ActionDescriptor.TargetingMode.HEX, "Movement must target a hex.")
 	var empty_hex = MapActionTargetScript.new(Vector2i(1, 1), null)
-	_expect(descriptor.matches_context(empty_hex, context), "Movement must be contextual on an empty hex in range.")
-	var movement_candidates: Array[Vector2i] = descriptor.get_candidate_coordinates(context)
+	var match_result: ActionResult = descriptor.matches_context(empty_hex, context)
+	_expect(match_result.is_success() and match_result.value == true, "Movement must be contextual on an empty hex in range.")
+	var candidate_result: ActionResult = descriptor.get_candidate_coordinates(context)
+	var movement_candidates: Array[Vector2i] = candidate_result.value
 	_expect(movement_candidates.size() == 37, "Move range 3 must enumerate exactly 37 axial candidates.")
 	movement.move_range = -1
 	var invalid_descriptor: ActionDescriptor = movement.get_action_descriptors(context)[0]
-	_expect(invalid_descriptor.get_candidate_coordinates(context).is_empty(), "Negative movement range must abort candidate enumeration.")
-	_expect(not invalid_descriptor.last_contract_error.is_empty(), "Negative movement range must propagate an explicit descriptor contract error.")
+	var invalid_result: ActionResult = invalid_descriptor.get_candidate_coordinates(context)
+	_expect(not invalid_result.is_success(), "Negative movement range must abort candidate enumeration with an explicit error.")
 
 func _test_attack_provider_contract() -> void:
 	var attacker := GameEntity.new()
@@ -57,8 +59,10 @@ func _test_attack_provider_contract() -> void:
 	_expect(descriptor.icon != null, "Attack action must provide an explicit icon.")
 	_expect(descriptor.targeting_mode == ActionDescriptor.TargetingMode.UNIT, "Attack must target a unit.")
 	var occupied_hex = MapActionTargetScript.new(Vector2i(3, 4), target)
-	_expect(descriptor.matches_context(occupied_hex, context), "Attack must be contextual on another unit in range.")
-	var attack_candidates: Array[Vector2i] = descriptor.get_candidate_coordinates(context)
+	var match_result: ActionResult = descriptor.matches_context(occupied_hex, context)
+	_expect(match_result.is_success() and match_result.value == true, "Attack must be contextual on another unit in range.")
+	var candidate_result: ActionResult = descriptor.get_candidate_coordinates(context)
+	var attack_candidates: Array[Vector2i] = candidate_result.value
 	_expect(attack_candidates.size() == 7, "Attack range 1 must enumerate exactly 7 axial candidates.")
 
 func _test_move_command_uses_movement_validation() -> void:

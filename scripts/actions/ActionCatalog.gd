@@ -22,14 +22,14 @@ func collect(entity: GameEntity, context: GameContext) -> Dictionary:
 			var contract_error := descriptor.validate_contract()
 			if not contract_error.is_empty():
 				return _error("Action provider %s: %s" % [component.name, contract_error])
-			var available := descriptor.is_available(context)
-			if not descriptor.last_contract_error.is_empty():
-				return _error(descriptor.last_contract_error)
-			if not available:
+			var availability := descriptor.availability(context)
+			if not availability.is_success():
+				return _error(availability.error)
+			if not availability.value:
 				var unavailable_reason := descriptor.get_unavailable_reason(context)
-				if not descriptor.last_contract_error.is_empty():
-					return _error(descriptor.last_contract_error)
-				if unavailable_reason.strip_edges().is_empty():
+				if not unavailable_reason.is_success():
+					return _error(unavailable_reason.error)
+				if unavailable_reason.value.strip_edges().is_empty():
 					return _error("Unavailable action '%s' from provider %s requires a player-facing reason." % [descriptor.action_id, component.name])
 			if ids.has(descriptor.action_id):
 				return _error("Duplicate action ID '%s' from providers %s and %s." % [descriptor.action_id, ids[descriptor.action_id], component.name])

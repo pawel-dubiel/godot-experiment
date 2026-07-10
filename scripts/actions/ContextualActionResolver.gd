@@ -7,15 +7,15 @@ func resolve(actions: Array, target: Variant, context: GameContext) -> Dictionar
 		if not candidate is ActionDescriptor:
 			return _error("ContextualActionResolver requires ActionDescriptor values.")
 		var descriptor := candidate as ActionDescriptor
-		var available := descriptor.is_available(context)
-		if not descriptor.last_contract_error.is_empty():
-			return _error(descriptor.last_contract_error)
-		if not available:
+		var availability := descriptor.availability(context)
+		if not availability.is_success():
+			return _error(availability.error)
+		if not availability.value:
 			continue
-		var is_match := descriptor.matches_context(target, context)
-		if not descriptor.last_contract_error.is_empty():
-			return _error(descriptor.last_contract_error)
-		if is_match:
+		var contextual_match := descriptor.matches_context(target, context)
+		if not contextual_match.is_success():
+			return _error(contextual_match.error)
+		if contextual_match.value:
 			matches.append(descriptor)
 
 	if matches.is_empty():

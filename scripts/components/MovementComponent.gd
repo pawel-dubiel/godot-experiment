@@ -24,22 +24,20 @@ func get_action_descriptors(_context: GameContext) -> Array[ActionDescriptor]:
 		"Move",
 		MOVE_ICON,
 		ActionDescriptor.TargetingMode.HEX,
-		func(_current_context): return _move_validator.is_valid(),
-		func(_current_context): return "Movement validation is not configured." if not _move_validator.is_valid() else "",
-		func(_current_context): return _get_candidate_coordinates(),
-		func(target, current_context): return _is_valid_action_target(target, current_context),
-		func(target, current_context): return _is_valid_action_target(target, current_context),
-		func(target, _current_context): return MoveCommand.new(get_entity(), target.grid_position, self) if target is MapActionTarget else null
+		MoveActionBehavior.new(self)
 	)
 	return [descriptor]
 
-func _get_candidate_coordinates() -> Variant:
+func has_move_validator() -> bool:
+	return _move_validator.is_valid()
+
+func get_candidate_coordinates() -> ActionResult:
 	var entity := get_entity() as GameEntity
 	if not entity:
-		return "MovementComponent requires a GameEntity parent to enumerate candidates."
+		return ActionResult.failure("MovementComponent requires a GameEntity parent to enumerate candidates.")
 	if move_range < 0:
-		return "MovementComponent move_range must be non-negative."
-	return HexCoordinates.within_range(entity.grid_position, move_range)
+		return ActionResult.failure("MovementComponent move_range must be non-negative.")
+	return ActionResult.success(HexCoordinates.within_range(entity.grid_position, move_range))
 
 func can_move_to(new_position: Vector2i) -> bool:
 	var entity: GameEntity = get_entity() as GameEntity
@@ -65,7 +63,7 @@ func is_within_move_range(new_position: Vector2i, context: GameContext) -> bool:
 		return false
 	return context.map_service.get_distance(entity.grid_position, new_position) <= move_range
 
-func _is_valid_action_target(target: Variant, context: GameContext) -> bool:
+func is_valid_action_target(target: Variant, context: GameContext) -> bool:
 	return (
 		target is MapActionTarget
 		and not target.entity

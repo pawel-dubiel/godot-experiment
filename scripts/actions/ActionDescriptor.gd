@@ -13,37 +13,20 @@ var action_id: StringName
 var display_name: String
 var icon: Texture2D
 var targeting_mode: TargetingMode
-var last_contract_error := ""
-
-var _availability_check: Callable
-var _unavailable_reason_provider: Callable
-var _candidate_coordinate_provider: Callable
-var _contextual_matcher: Callable
-var _target_validator: Callable
-var _command_factory: Callable
+var behavior: ActionBehavior
 
 func _init(
 	p_action_id: StringName,
 	p_display_name: String,
 	p_icon: Texture2D,
 	p_targeting_mode: TargetingMode,
-	p_availability_check: Callable,
-	p_unavailable_reason_provider: Callable,
-	p_candidate_coordinate_provider: Callable,
-	p_contextual_matcher: Callable,
-	p_target_validator: Callable,
-	p_command_factory: Callable
+	p_behavior: ActionBehavior
 ) -> void:
 	action_id = p_action_id
 	display_name = p_display_name
 	icon = p_icon
 	targeting_mode = p_targeting_mode
-	_availability_check = p_availability_check
-	_unavailable_reason_provider = p_unavailable_reason_provider
-	_candidate_coordinate_provider = p_candidate_coordinate_provider
-	_contextual_matcher = p_contextual_matcher
-	_target_validator = p_target_validator
-	_command_factory = p_command_factory
+	behavior = p_behavior
 
 func validate_contract() -> String:
 	if action_id.is_empty():
@@ -52,77 +35,65 @@ func validate_contract() -> String:
 		return "ActionDescriptor %s requires a display_name." % action_id
 	if not icon:
 		return "ActionDescriptor %s requires an icon." % action_id
-	if not _availability_check.is_valid():
-		return "ActionDescriptor %s requires an availability check." % action_id
-	if not _unavailable_reason_provider.is_valid():
-		return "ActionDescriptor %s requires an unavailable-reason provider." % action_id
-	if not _candidate_coordinate_provider.is_valid():
-		return "ActionDescriptor %s requires a candidate-coordinate provider." % action_id
-	if not _contextual_matcher.is_valid():
-		return "ActionDescriptor %s requires a contextual matcher." % action_id
-	if not _target_validator.is_valid():
-		return "ActionDescriptor %s requires a target validator." % action_id
-	if not _command_factory.is_valid():
-		return "ActionDescriptor %s requires a command factory." % action_id
+	if not behavior:
+		return "ActionDescriptor %s requires an ActionBehavior." % action_id
 	return ""
 
-func is_available(context: GameContext) -> bool:
-	last_contract_error = ""
-	var result = _availability_check.call(context)
-	if typeof(result) != TYPE_BOOL:
-		_set_contract_error("ActionDescriptor %s availability check must return bool." % action_id)
-		return false
-	return result
+func availability(context: GameContext) -> ActionResult:
+	return _require_bool(behavior.availability(context), "availability")
 
-func get_unavailable_reason(context: GameContext) -> String:
-	last_contract_error = ""
-	var result = _unavailable_reason_provider.call(context)
-	if typeof(result) != TYPE_STRING:
-		_set_contract_error("ActionDescriptor %s unavailable-reason provider must return String." % action_id)
-		return ""
-	return result
+func get_unavailable_reason(context: GameContext) -> ActionResult:
+	return _require_string(behavior.get_unavailable_reason(context), "unavailable reason")
 
-func get_candidate_coordinates(context: GameContext) -> Array[Vector2i]:
-	last_contract_error = ""
-	var result = _candidate_coordinate_provider.call(context)
-	if result is String and not result.strip_edges().is_empty():
-		_set_contract_error(result)
-		return []
-	if not result is Array:
-		_set_contract_error("ActionDescriptor %s candidate-coordinate provider must return Array[Vector2i]." % action_id)
-		return []
+func get_candidate_coordinates(context: GameContext) -> ActionResult:
+	var result := _require_result(behavior.get_candidate_coordinates(context), "candidate coordinates")
+	if not result.is_success():
+		return result
+	if not result.value is Array:
+		return _contract_failure("candidate coordinates must be Array[Vector2i].")
 	var coordinates: Array[Vector2i] = []
-	for candidate in result:
+	for candidate in result.value:
 		if typeof(candidate) != TYPE_VECTOR2I:
-			_set_contract_error("ActionDescriptor %s candidate-coordinate provider returned a non-Vector2i value." % action_id)
-			return []
+			return _contract_failure("candidate coordinates contain a non-Vector2i value.")
 		coordinates.append(candidate)
-	return coordinates
+	return ActionResult.success(coordinates)
 
-func matches_context(target: Variant, context: GameContext) -> bool:
-	last_contract_error = ""
-	var result = _contextual_matcher.call(target, context)
-	if typeof(result) != TYPE_BOOL:
-		_set_contract_error("ActionDescriptor %s contextual matcher must return bool." % action_id)
-		return false
+func matches_context(target: Variant, context: GameContext) -> ActionResult:
+	return _require_bool(behavior.matches_context(target, context), "contextual match")
+
+func validate_target(target: Variant, context: GameContext) -> ActionResult:
+	return _require_bool(behavior.validate_target(target, context), "target validation")
+
+func create_command(target: Variant, context: GameContext) -> ActionResult:
+	var result := _require_result(behavior.create_command(target, context), "command creation")
+	if not result.is_success():
+		return result
+	if not result.value is Command:
+		return _contract_failure("command creation must return Command.")
 	return result
 
-func is_valid_target(target: Variant, context: GameContext) -> bool:
-	last_contract_error = ""
-	var result = _target_validator.call(target, context)
-	if typeof(result) != TYPE_BOOL:
-		_set_contract_error("ActionDescriptor %s target validator must return bool." % action_id)
-		return false
+func _require_bool(result: ActionResult, operation: String) -> ActionResult:
+	result = _require_result(result, operation)
+	if not result.is_success():
+		return result
+	if typeof(result.value) != TYPE_BOOL:
+		return _contract_failure("%s must return bool." % operation)
 	return result
 
-func create_command(target: Variant, context: GameContext) -> Command:
-	last_contract_error = ""
-	var result = _command_factory.call(target, context)
-	if not result is Command:
-		_set_contract_error("ActionDescriptor %s command factory must return Command." % action_id)
-		return null
-	return result as Command
+func _require_string(result: ActionResult, operation: String) -> ActionResult:
+	result = _require_result(result, operation)
+	if not result.is_success():
+		return result
+	if typeof(result.value) != TYPE_STRING:
+		return _contract_failure("%s must return String." % operation)
+	return result
 
-func _set_contract_error(message: String) -> void:
-	last_contract_error = message
+func _require_result(result: ActionResult, operation: String) -> ActionResult:
+	if not result:
+		return _contract_failure("%s must return ActionResult." % operation)
+	return result
+
+func _contract_failure(detail: String) -> ActionResult:
+	var message := "ActionDescriptor %s %s" % [action_id, detail]
 	push_error(message)
+	return ActionResult.failure(message)

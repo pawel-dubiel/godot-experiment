@@ -9,18 +9,24 @@ func _init():
 		dir.make_dir_recursive("scenes/units")
 	
 	# Load scripts by path to avoid cache issues
-	var AttackCompScript = load("res://scripts/components/AttackComponent.gd")
+	var AbilityCompScript = load("res://scripts/components/AbilityComponent.gd")
 	var HealthCompScript = load("res://scripts/components/HealthComponent.gd")
 	var MoveCompScript = load("res://scripts/components/MovementComponent.gd")
 	var GameEntityScript = load("res://scripts/core/GameEntity.gd")
 	
-	create_soldier(GameEntityScript, HealthCompScript, AttackCompScript, MoveCompScript)
-	create_tank(GameEntityScript, HealthCompScript, AttackCompScript, MoveCompScript)
+	var soldier_ability = load("res://resources/abilities/soldier_rifle.tres")
+	var tank_ability = load("res://resources/abilities/tank_cannon.tres")
+	if not soldier_ability or not tank_ability:
+		printerr("Content generation requires authored Soldier and Tank ability resources.")
+		quit(1)
+		return
+	create_soldier(GameEntityScript, HealthCompScript, AbilityCompScript, MoveCompScript, soldier_ability)
+	create_tank(GameEntityScript, HealthCompScript, AbilityCompScript, MoveCompScript, tank_ability)
 	
 	print("Content Generation Complete.")
 	quit()
 
-func create_soldier(EntityScript, HealthScript, AttackScript, MoveScript):
+func create_soldier(EntityScript, HealthScript, AbilityScript, MoveScript, ability_definition):
 	var soldier = EntityScript.new()
 	soldier.name = "Soldier"
 	
@@ -32,13 +38,13 @@ func create_soldier(EntityScript, HealthScript, AttackScript, MoveScript):
 	soldier.add_child(health)
 	health.owner = soldier # Important for packing
 	
-	# 2. Attack
-	var attack = AttackScript.new()
-	attack.name = "AttackComponent"
-	attack.attack_damage = 10
-	attack.attack_range = 1
-	soldier.add_child(attack)
-	attack.owner = soldier
+	# 2. Abilities
+	var abilities = AbilityScript.new()
+	abilities.name = "AbilityComponent"
+	var definitions: Array[AbilityDefinition] = [ability_definition]
+	abilities.ability_definitions = definitions
+	soldier.add_child(abilities)
+	abilities.owner = soldier
 	
 	# 3. Movement
 	var move = MoveScript.new()
@@ -56,7 +62,7 @@ func create_soldier(EntityScript, HealthScript, AttackScript, MoveScript):
 	
 	save_scene(soldier, "res://scenes/units/Soldier.tscn")
 
-func create_tank(EntityScript, HealthScript, AttackScript, MoveScript):
+func create_tank(EntityScript, HealthScript, AbilityScript, MoveScript, ability_definition):
 	var tank = EntityScript.new()
 	tank.name = "Tank"
 	
@@ -68,13 +74,13 @@ func create_tank(EntityScript, HealthScript, AttackScript, MoveScript):
 	tank.add_child(health)
 	health.owner = tank
 	
-	# 2. Attack
-	var attack = AttackScript.new()
-	attack.name = "AttackComponent"
-	attack.attack_damage = 50
-	attack.attack_range = 3 # Can shoot further
-	tank.add_child(attack)
-	attack.owner = tank
+	# 2. Abilities
+	var abilities = AbilityScript.new()
+	abilities.name = "AbilityComponent"
+	var definitions: Array[AbilityDefinition] = [ability_definition]
+	abilities.ability_definitions = definitions
+	tank.add_child(abilities)
+	abilities.owner = tank
 	
 	# 3. Movement
 	var move = MoveScript.new()

@@ -32,6 +32,8 @@ The primary goal is to establish a scalable foundation for large strategy maps. 
     *   Valid targets are highlighted and the pointer communicates whether the hovered target is allowed.
     *   Contextual and explicit actions both create validated Commands; UI code never mutates gameplay state directly.
 
+The standard `TestLevel` uses a `100 × 100` map (10,000 hexes) so navigation, targeting, and rendering can be exercised beyond a toy-sized board.
+
 ### Architecture: Generic Strategy Engine
 
 The engine is designed to be data-driven and modular, avoiding hardcoded logic for specific game rules.
@@ -80,7 +82,9 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
 3.  Navigate and interact with the map:
     *   Hold `W`, `A`, `S`, or `D` to pan the camera.
     *   Hold the left mouse button on the map and drag to pan. A short left-click still selects or clears a unit.
-    *   Use the mouse wheel to zoom toward the pointer; touchpad pan and pinch gestures are also supported.
+    *   Scroll the mouse wheel up to zoom in and down to zoom out; the wheel button does not need to be held.
+    *   On macOS, scroll vertically with two fingers to zoom toward the pointer. Pinch-to-zoom is also supported; horizontal two-finger movement is ignored.
+    *   Press `+` to zoom in or `-` to zoom out around the center of the window.
     *   Right-click an empty reachable hex to move the selected unit, or a valid unit to attack it.
     *   Choose an action from the bottom command console to enter explicit targeting mode.
     *   Press `Escape`, or right-click an invalid target, to cancel targeting without clearing selection.

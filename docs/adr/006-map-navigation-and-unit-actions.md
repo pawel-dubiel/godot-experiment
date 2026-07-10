@@ -25,10 +25,12 @@ The camera supports the following inputs:
 * **Keyboard pan**: Holding `W`, `A`, `S`, or `D` moves the camera continuously in screen directions. Keyboard panning works regardless of unit selection or targeting state, except while a text-entry control has keyboard focus.
 * **Pointer pan**: Pressing and holding the left mouse button on the map, then moving beyond a configured drag threshold, pans the camera. Camera movement tracks the pointer without acceleration.
 * **Click versus drag**: Releasing the left mouse button before crossing the threshold is a selection click. After the threshold is crossed, the gesture is exclusively a camera drag; its release must not select, deselect, target, or execute an action.
-* **Zoom**: The mouse wheel zooms toward the pointer position. Supported touchpad zoom and pan gestures remain available and must not change gameplay interaction state.
+* **Zoom**: Rotating the mouse wheel zooms toward the pointer: wheel up zooms in and wheel down zooms out. The middle mouse button does not need to be held and middle-button dragging has no camera behavior.
+* **Trackpad zoom**: On macOS, vertical two-finger scrolling zooms toward the pointer. Upward scrolling zooms in and downward scrolling zooms out. Horizontal two-finger movement is ignored. Pinch-to-zoom remains supported.
+* **Keyboard zoom**: `+` zooms in and `-` zooms out around the viewport center. Keyboard zoom works during selection and targeting, except while a text-entry control has keyboard focus.
 * **UI exclusion**: UI controls consume pointer input. Presses that begin over the action bar or another interactive panel never start map selection or camera dragging.
 
-Middle-button panning may remain as an optional secondary binding, but it is not the documented primary interaction. Right-button panning is removed because right-click is reserved exclusively for gameplay actions and cancellation.
+Middle-button panning is not supported. Right-button panning is also removed because right-click is reserved exclusively for gameplay actions and cancellation.
 
 Camera navigation does not change the selected unit, armed action, or valid-target presentation.
 
@@ -190,9 +192,12 @@ The implementation must include tests demonstrating that:
 * A drag never triggers selection or an action when released.
 * UI-originated pointer gestures never reach map interaction.
 * WASD movement works during selection and targeting without changing either state.
+* Mouse-wheel up/down, macOS two-finger vertical scroll, pinch, and `+`/`-` all emit the correct semantic zoom direction and anchor.
+* Horizontal two-finger movement and middle-button dragging do not pan, zoom, select, or issue an action.
 * Right-click resolves one valid contextual default and never depends on provider order.
 * Conflicting contextual defaults fail explicitly with both action IDs.
 * Selecting an action enters targeting; cancellation preserves selection.
 * Disabled actions expose their reason and cannot create a command.
 * Every command is authoritatively revalidated immediately before execution.
 * Missing dependencies and incomplete descriptors abort with explicit contract errors.
+* The standard test level generates a `100 x 100` map (10,000 cells) and completes a headless runtime smoke test without script or runtime errors.

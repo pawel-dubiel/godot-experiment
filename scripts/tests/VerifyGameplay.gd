@@ -1,7 +1,7 @@
 extends Node
 
 const MovementComponent = preload("res://scripts/components/MovementComponent.gd")
-const AttackComponent = preload("res://scripts/components/AttackComponent.gd")
+const AbilityComponentScript = preload("res://scripts/components/AbilityComponent.gd")
 const HealthComponent = preload("res://scripts/components/HealthComponent.gd")
 const GameContext = preload("res://scripts/core/GameContext.gd")
 
@@ -54,17 +54,21 @@ func _ready() -> void:
 
 	# --- Test Attack ---
 	print("\n[TEST] Soldier Attack")
-	var attack_comp = soldier.get_component(AttackComponent)
+	var ability_component = soldier.get_component(AbilityComponentScript) as AbilityComponent
 	var tank_health = tank.get_component(HealthComponent)
 	
-	if not attack_comp or not tank_health:
-		print("ERROR: Missing Attack or Health components")
+	if not ability_component or not tank_health:
+		print("ERROR: Missing Ability or Health components")
 		return
 	
 	var start_hp = tank_health.current_hp
 	print("Tank Start HP: %d" % start_hp)
 	
-	var cmd = attack_comp.create_attack_command(tank)
+	var ability_result := ability_component.get_ability_instance(&"attack")
+	if not ability_result.is_success():
+		print("ERROR: %s" % ability_result.error)
+		return
+	var cmd := AbilityCommand.new(soldier, ability_result.value, MapActionTarget.new(tank.grid_position, tank))
 	var context = GameContext.new(map_service)
 	
 	cmd.execute(context)

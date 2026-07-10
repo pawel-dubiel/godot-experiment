@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityCost.gd" id="1_e860f"]
+[ext_resource type="Texture2D" path="res://assets/ui/action-attack.svg" id="2_b4tbx"]
+[ext_resource type="Script" path="res://scripts/core/abilities/OutcomeEffect.gd" id="3_jiltu"]
+[ext_resource type="Script" path="res://scripts/core/abilities/DamageOutcomeEffect.gd" id="4_x0s50"]
+[ext_resource type="Script" path="res://scripts/core/requirements/Requirement.gd" id="5_7qe47"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AutomaticResolution.gd" id="6_wviup"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityDefinition.gd" id="7_rndri"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityTargeting.gd" id="8_3mkr0"]
+
+[sub_resource type="Resource" id="Resource_qrdmg"]
+script = ExtResource("4_x0s50")
+
+[sub_resource type="Resource" id="Resource_2ynun"]
+script = ExtResource("6_wviup")
+
+[sub_resource type="Resource" id="Resource_cente"]
+script = ExtResource("8_3mkr0")
+maximum_range = 2
+
+[resource]
+script = ExtResource("7_rndri")
+ability_id = &"attack"
+display_name = "Cannon"
+icon = ExtResource("2_b4tbx")
+targeting = SubResource("Resource_cente")
+base_power = 25.0
+resolution = SubResource("Resource_2ynun")
+outcome_effects = Array[ExtResource("3_jiltu")]([SubResource("Resource_qrdmg")])

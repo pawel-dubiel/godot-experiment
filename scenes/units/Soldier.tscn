@@ -1,10 +1,12 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" uid="uid://c0pwmcyw1nb75" path="res://scripts/core/GameEntity.gd" id="1"]
 [ext_resource type="Script" uid="uid://dqyjbq334vv8o" path="res://scripts/components/HealthComponent.gd" id="2"]
-[ext_resource type="Script" uid="uid://b2woslekb42ga" path="res://scripts/components/AttackComponent.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/components/AbilityComponent.gd" id="3"]
 [ext_resource type="Script" uid="uid://bv215psyess04" path="res://scripts/components/MovementComponent.gd" id="4"]
 [ext_resource type="Texture2D" uid="uid://dimxyhkm81vld" path="res://assets/soldier.jpg" id="5"]
+[ext_resource type="Resource" path="res://resources/abilities/soldier_rifle.tres" id="6"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityDefinition.gd" id="7"]
 
 [node name="Soldier" type="Node2D"]
 script = ExtResource("1")
@@ -13,10 +15,9 @@ script = ExtResource("1")
 script = ExtResource("2")
 max_hp = 100
 
-[node name="AttackComponent" type="Node" parent="."]
+[node name="AbilityComponent" type="Node" parent="."]
 script = ExtResource("3")
-attack_damage = 10
-attack_range = 1
+ability_definitions = Array[ExtResource("7")]([ExtResource("6")])
 
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("4")

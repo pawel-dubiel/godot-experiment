@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityCost.gd" id="1_4a3hw"]
+[ext_resource type="Texture2D" path="res://assets/ui/action-attack.svg" id="2_pbtb2"]
+[ext_resource type="Script" path="res://scripts/core/abilities/OutcomeEffect.gd" id="3_4tstm"]
+[ext_resource type="Script" path="res://scripts/core/abilities/DamageOutcomeEffect.gd" id="4_v6b2m"]
+[ext_resource type="Script" path="res://scripts/core/requirements/Requirement.gd" id="5_ah5it"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AutomaticResolution.gd" id="6_3iq5k"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityDefinition.gd" id="7_h3liu"]
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityTargeting.gd" id="8_w4cu8"]
+
+[sub_resource type="Resource" id="Resource_v3xus"]
+script = ExtResource("4_v6b2m")
+
+[sub_resource type="Resource" id="Resource_c01rs"]
+script = ExtResource("6_3iq5k")
+
+[sub_resource type="Resource" id="Resource_wtjwm"]
+script = ExtResource("8_w4cu8")
+
+[resource]
+script = ExtResource("7_h3liu")
+ability_id = &"attack"
+display_name = "Rifle Shot"
+icon = ExtResource("2_pbtb2")
+targeting = SubResource("Resource_wtjwm")
+base_power = 10.0
+resolution = SubResource("Resource_c01rs")
+outcome_effects = Array[ExtResource("3_4tstm")]([SubResource("Resource_v3xus")])

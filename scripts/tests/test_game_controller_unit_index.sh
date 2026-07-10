@@ -29,7 +29,7 @@ grep -q 'if not _resolve_dependencies()' "$script_path" || {
 	exit 1
 }
 
-grep -q 'node_paths=PackedStringArray("map_service", "tile_map", "units_root")' "$scene_path" || {
+grep -q 'node_paths=PackedStringArray("map_service", "tile_map", "units_root", "input_router", "camera_control", "action_catalog", "contextual_action_resolver", "command_executor", "action_bar", "targeting_overlay")' "$scene_path" || {
 	echo "TestLevel must wire GameController dependencies explicitly."
 	exit 1
 }
@@ -69,18 +69,13 @@ grep -q 'func _set_current_selection' "$script_path" || {
 	exit 1
 }
 
-grep -q 'func _can_move_to_grid_position' "$script_path" || {
-	echo "GameController must validate move destination occupancy before moving."
-	exit 1
-}
-
 grep -q 'func _can_unit_move_to_grid_position' "$script_path" || {
 	echo "GameController must expose unit-specific movement validation for MovementComponent."
 	exit 1
 }
 
-grep -q '_can_move_to_grid_position(grid_pos)' "$script_path" || {
-	echo "GameController action handling must call move destination validation."
+grep -q 'command_executor.execute(command, _context)' "$script_path" || {
+	echo "GameController must route gameplay mutations through CommandExecutor."
 	exit 1
 }
 

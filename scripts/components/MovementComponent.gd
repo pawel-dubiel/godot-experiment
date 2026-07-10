@@ -10,11 +10,59 @@ signal movement_finished(final_pos: Vector2i)
 
 var _move_validator: Callable
 
+const MOVE_ICON := preload("res://assets/ui/action-move.svg")
+
 func set_move_validator(validator: Callable) -> void:
 	if not validator.is_valid():
 		push_error("MovementComponent requires a valid move validator.")
 		return
 	_move_validator = validator
+
+func get_action_descriptors(_context: GameContext) -> Array[ActionDescriptor]:
+	var descriptor := ActionDescriptor.new(
+		&"move",
+		"Move",
+		MOVE_ICON,
+		ActionDescriptor.TargetingMode.HEX,
+		func(_current_context): return _move_validator.is_valid(),
+		func(_current_context): return "Movement validation is not configured." if not _move_validator.is_valid() else "",
+		func(target, current_context): return _is_valid_action_target(target, current_context),
+		func(target, current_context): return _is_valid_action_target(target, current_context),
+		func(target, _current_context): return MoveCommand.new(get_entity(), target.grid_position, self) if target is MapActionTarget else null
+	)
+	return [descriptor]
+
+func can_move_to(new_position: Vector2i) -> bool:
+	var entity: GameEntity = get_entity() as GameEntity
+	if not entity:
+		push_error("MovementComponent requires a GameEntity parent.")
+		return false
+	if not _move_validator.is_valid():
+		push_error("MovementComponent for %s requires an explicit move validator before validating movement." % entity.name)
+		return false
+	var validation_result = _move_validator.call(entity, new_position)
+	if typeof(validation_result) != TYPE_BOOL:
+		push_error("MovementComponent move validator for %s must return bool." % entity.name)
+		return false
+	return validation_result
+
+func is_within_move_range(new_position: Vector2i, context: GameContext) -> bool:
+	var entity := get_entity() as GameEntity
+	if not entity:
+		push_error("MovementComponent requires a GameEntity parent.")
+		return false
+	if not context or not context.map_service:
+		push_error("MovementComponent requires GameContext.map_service for range validation.")
+		return false
+	return context.map_service.get_distance(entity.grid_position, new_position) <= move_range
+
+func _is_valid_action_target(target: Variant, context: GameContext) -> bool:
+	return (
+		target is MapActionTarget
+		and not target.entity
+		and can_move_to(target.grid_position)
+		and is_within_move_range(target.grid_position, context)
+	)
 
 ## Teleport to a grid position immediately (Logical Move)
 func move_to(new_position: Vector2i) -> void:
@@ -23,15 +71,7 @@ func move_to(new_position: Vector2i) -> void:
 		push_error("MovementComponent requires a GameEntity parent.")
 		return
 
-	if not _move_validator.is_valid():
-		push_error("MovementComponent for %s requires an explicit move validator before moving." % entity.name)
-		return
-
-	var validation_result = _move_validator.call(entity, new_position)
-	if typeof(validation_result) != TYPE_BOOL:
-		push_error("MovementComponent move validator for %s must return bool." % entity.name)
-		return
-	if not validation_result:
+	if not can_move_to(new_position):
 		return
 
 	var old_position: Vector2i = entity.grid_position

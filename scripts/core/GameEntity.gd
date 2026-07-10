@@ -155,6 +155,13 @@ func register_component(component: Node) -> void:
 func get_component(component_type: Script) -> Node:
 	return _components.get(component_type)
 
+## Read-only snapshot used by systems that aggregate explicit component contracts.
+func get_registered_components() -> Array[Node]:
+	var result: Array[Node] = []
+	for component in _components.values():
+		result.append(component)
+	return result
+
 ## Helper for string-based lookup (slower, but sometimes needed)
 func get_component_by_name(type_name: String) -> Node:
 	for comp in _components.values():

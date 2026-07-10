@@ -24,8 +24,13 @@ The primary goal is to establish a scalable foundation for large strategy maps. 
 
 4.  **CameraControl**
     *   Implements a robust 2D camera system.
-    *   Supports multiple input methods: Mouse Wheel, Keyboard shortcuts, and Touchpad gestures (Pinch/Pan).
+    *   Supports multiple input methods: WASD, left-button drag, mouse wheel, and touchpad gestures (Pinch/Pan).
     -   Includes logic to normalize input sensitivity across different devices (e.g., macOS trackpads vs. standard mice).
+
+5.  **Unit Action Interface**
+    *   Selecting a unit opens a bottom command console populated by that unit's action providers.
+    *   Valid targets are highlighted and the pointer communicates whether the hovered target is allowed.
+    *   Contextual and explicit actions both create validated Commands; UI code never mutates gameplay state directly.
 
 ### Architecture: Generic Strategy Engine
 
@@ -72,4 +77,10 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
 
 1.  Open the project in the Godot Editor.
 2.  Run the `scenes/Main.tscn` scene.
-3.  Use the Right Mouse Button to pan and the Mouse Wheel or Trackpad to zoom.
+3.  Navigate and interact with the map:
+    *   Hold `W`, `A`, `S`, or `D` to pan the camera.
+    *   Hold the left mouse button on the map and drag to pan. A short left-click still selects or clears a unit.
+    *   Use the mouse wheel to zoom toward the pointer; touchpad pan and pinch gestures are also supported.
+    *   Right-click an empty reachable hex to move the selected unit, or a valid unit to attack it.
+    *   Choose an action from the bottom command console to enter explicit targeting mode.
+    *   Press `Escape`, or right-click an invalid target, to cancel targeting without clearing selection.

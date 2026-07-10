@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://dgeqp5m6kwclw"]
+[gd_scene load_steps=15 format=3 uid="uid://dgeqp5m6kwclw"]
 
 [ext_resource type="Script" uid="uid://dmm5lysodocap" path="res://scripts/systems/MapService.gd" id="1"]
 [ext_resource type="Script" uid="uid://5w6t8uh5wnh" path="res://scripts/HexGrid.gd" id="2"]
@@ -8,6 +8,12 @@
 [ext_resource type="PackedScene" path="res://scenes/units/Tank.tscn" id="6"]
 [ext_resource type="Script" uid="uid://b3ki3efpkxoke" path="res://scripts/core/GameController.gd" id="7"]
 [ext_resource type="Script" uid="uid://r8b3d8qhxgor" path="res://scripts/CameraControl.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/input/MapInputRouter.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/actions/ActionCatalog.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/actions/ContextualActionResolver.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/actions/CommandExecutor.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/ui/ActionBar.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/ui/TargetingOverlay.gd" id="14"]
 
 [node name="TestLevel" type="Node2D"]
 
@@ -29,11 +35,36 @@ default_terrain = ExtResource("4")
 position = Vector2(400, 300)
 script = ExtResource("8")
 
-[node name="GameController" type="Node" parent="." node_paths=PackedStringArray("map_service", "tile_map", "units_root")]
+[node name="MapInputRouter" type="Node" parent="."]
+script = ExtResource("9")
+
+[node name="ActionCatalog" type="Node" parent="."]
+script = ExtResource("10")
+
+[node name="ContextualActionResolver" type="Node" parent="."]
+script = ExtResource("11")
+
+[node name="CommandExecutor" type="Node" parent="."]
+script = ExtResource("12")
+
+[node name="ActionBar" type="CanvasLayer" parent="."]
+script = ExtResource("13")
+
+[node name="TargetingOverlay" type="Node2D" parent="."]
+script = ExtResource("14")
+
+[node name="GameController" type="Node" parent="." node_paths=PackedStringArray("map_service", "tile_map", "units_root", "input_router", "camera_control", "action_catalog", "contextual_action_resolver", "command_executor", "action_bar", "targeting_overlay")]
 script = ExtResource("7")
 map_service = NodePath("../MapService")
 tile_map = NodePath("../HexGridView")
 units_root = NodePath("..")
+input_router = NodePath("../MapInputRouter")
+camera_control = NodePath("../Camera2D")
+action_catalog = NodePath("../ActionCatalog")
+contextual_action_resolver = NodePath("../ContextualActionResolver")
+command_executor = NodePath("../CommandExecutor")
+action_bar = NodePath("../ActionBar")
+targeting_overlay = NodePath("../TargetingOverlay")
 
 [node name="Soldier" parent="." instance=ExtResource("5")]
 grid_position = Vector2i(5, 2)

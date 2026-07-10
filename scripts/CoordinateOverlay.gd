@@ -99,14 +99,23 @@ func _get_visible_map_range() -> Rect2i:
 	var visible_size = viewport_rect.size / zoom
 	var top_left_world = cam_pos - visible_size / 2 - viewport_margin
 	var bottom_right_world = cam_pos + visible_size / 2 + viewport_margin
-	
-	var min_map = tile_map.local_to_map(tile_map.to_local(top_left_world))
-	var max_map = tile_map.local_to_map(tile_map.to_local(bottom_right_world))
-	
-	var x_start = min(min_map.x, max_map.x)
-	var x_end = max(min_map.x, max_map.x)
-	var y_start = min(min_map.y, max_map.y)
-	var y_end = max(min_map.y, max_map.y)
+	var world_corners := [
+		top_left_world,
+		Vector2(bottom_right_world.x, top_left_world.y),
+		bottom_right_world,
+		Vector2(top_left_world.x, bottom_right_world.y),
+	]
+	var first_axial := tile_map.local_to_axial(tile_map.to_local(world_corners[0]))
+	var x_start := first_axial.x
+	var x_end := first_axial.x
+	var y_start := first_axial.y
+	var y_end := first_axial.y
+	for world_corner in world_corners:
+		var axial_corner := tile_map.local_to_axial(tile_map.to_local(world_corner))
+		x_start = mini(x_start, axial_corner.x)
+		x_end = maxi(x_end, axial_corner.x)
+		y_start = mini(y_start, axial_corner.y)
+		y_end = maxi(y_end, axial_corner.y)
 
 	return Rect2i(x_start, y_start, x_end - x_start + 1, y_end - y_start + 1)
 
@@ -139,7 +148,7 @@ func _limit_candidate_cells(range_rect: Rect2i) -> Rect2i:
 	var target_height: int = min(range_rect.size.y, max(1, int(floor(float(max_visible_candidate_cells) / float(target_width)))))
 	var half_width := int(float(target_width) / 2.0)
 	var half_height := int(float(target_height) / 2.0)
-	var camera_cell = tile_map.local_to_map(tile_map.to_local(camera.global_position))
+	var camera_cell = tile_map.local_to_axial(tile_map.to_local(camera.global_position))
 	var start_x = clampi(camera_cell.x - half_width, range_rect.position.x, range_rect.end.x - target_width)
 	var start_y = clampi(camera_cell.y - half_height, range_rect.position.y, range_rect.end.y - target_height)
 	return Rect2i(Vector2i(start_x, start_y), Vector2i(target_width, target_height))

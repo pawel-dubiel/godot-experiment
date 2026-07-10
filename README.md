@@ -55,7 +55,7 @@ The engine is designed to be data-driven and modular, avoiding hardcoded logic f
 3.  **Advanced Command System (Conditions & Effects)**
     *   **Requirements**: Commands have `Requirement` resources (e.g., `LineOfSight`, `ActionPoints`). Checked during validation.
     *   **Effects**: Commands spawn `Effect` resources (e.g., `Damage`, `Heal`, `Push`) upon execution.
-    *   **Providers**: `UnitComponents` expose available commands dynamically based on game state (e.g., `AttackComponent` provides `AttackCommand`).
+    *   **Providers**: `AbilityComponent` exposes each unit's authored ability definitions through unit-owned runtime instances, while other components can provide actions through the same descriptor contract.
 
 4.  **Turn System (Phase-Based)**
     *   **Phases**: Turns are divided into discrete `GamePhase` resources (e.g., `StartPhase`, `MovementPhase`, `CombatPhase`).

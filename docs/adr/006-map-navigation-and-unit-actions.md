@@ -76,6 +76,7 @@ Every presented action must provide:
 * An icon.
 * Current availability and, when unavailable, a player-facing reason.
 * A targeting mode, such as no target, hex, unit, direction, or area.
+* A bounded candidate-coordinate provider used to build targeting feedback without scanning the entire map.
 * Contextual-default declarations, if any.
 * A way to validate a candidate target and create the corresponding `Command`.
 
@@ -110,6 +111,8 @@ It does not encode movement, attack, range, cost, faction, or terrain rules.
 Unit components that grant actions implement the action-provider contract. Providers return action descriptors for their owning entity and the current `GameContext`.
 
 An action descriptor supplies presentation metadata and delegates target validation and command creation to gameplay logic. Descriptors are not executed directly and must not mutate model state.
+
+Each descriptor also enumerates a bounded set of candidate axial coordinates. Movement and attack providers derive these candidates from their configured ranges. Target highlighting validates only those candidates against current model state; command execution still performs authoritative validation.
 
 All required descriptor fields are explicit. A provider returning incomplete metadata is a contract failure; the catalog reports the provider and missing field and omits no error by substituting a generic label, icon, targeting mode, or contextual behavior.
 
@@ -183,6 +186,7 @@ Using left-click for selection, movement, attacks, and camera dragging makes the
 * Action descriptors and providers add presentation-oriented contracts around the existing command system.
 * Contextual defaults require deliberate configuration for every action that participates.
 * Target previews may become stale and therefore cannot replace authoritative command validation.
+* Every action provider must define candidate enumeration in addition to validation and command creation.
 
 ## Verification
 
@@ -200,4 +204,5 @@ The implementation must include tests demonstrating that:
 * Disabled actions expose their reason and cannot create a command.
 * Every command is authoritatively revalidated immediately before execution.
 * Missing dependencies and incomplete descriptors abort with explicit contract errors.
+* Targeting a range-3 action on the 100×100 map examines at most 37 axial candidates rather than 10,000 map cells.
 * The standard test level generates a `100 x 100` map (10,000 cells) and completes a headless runtime smoke test without script or runtime errors.

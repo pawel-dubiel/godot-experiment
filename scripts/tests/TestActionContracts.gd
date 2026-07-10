@@ -42,6 +42,7 @@ func _initialize() -> void:
 	_test_catalog_rejects_missing_disabled_reason()
 	_test_contextual_resolution_is_unambiguous()
 	_test_malformed_matcher_is_configuration_error()
+	_test_malformed_candidate_provider_is_configuration_error()
 	_test_executor_validates_before_execution()
 	_test_executor_reports_command_failure()
 
@@ -82,6 +83,7 @@ func _test_catalog_rejects_missing_disabled_reason() -> void:
 		ActionDescriptorScript.TargetingMode.NONE,
 		func(_context): return false,
 		func(_context): return "",
+		func(_context): return [Vector2i.ZERO],
 		func(_target, _context): return false,
 		func(_target, _context): return false,
 		func(_target, _context): return TestCommand.new()
@@ -112,6 +114,22 @@ func _test_malformed_matcher_is_configuration_error() -> void:
 	var result: Dictionary = ContextualActionResolverScript.new().resolve([malformed], Vector2i.ZERO, null)
 	_expect(result.status == &"error", "Malformed action-provider return types must resolve as configuration errors.")
 
+func _test_malformed_candidate_provider_is_configuration_error() -> void:
+	var malformed = ActionDescriptorScript.new(
+		&"broken_candidates",
+		"Broken candidates",
+		preload("res://icon.svg"),
+		ActionDescriptorScript.TargetingMode.HEX,
+		func(_context): return true,
+		func(_context): return "",
+		func(_context): return "not an array",
+		func(_target, _context): return false,
+		func(_target, _context): return false,
+		func(_target, _context): return TestCommand.new()
+	)
+	_expect(malformed.get_candidate_coordinates(null).is_empty(), "Malformed candidate providers must abort with an empty result.")
+	_expect(not malformed.last_contract_error.is_empty(), "Malformed candidate providers must expose an explicit contract error.")
+
 func _test_executor_validates_before_execution() -> void:
 	var executor = CommandExecutorScript.new()
 	var context := GameContext.new()
@@ -139,6 +157,7 @@ func _descriptor(id: StringName, contextual_matcher: Callable):
 		ActionDescriptorScript.TargetingMode.HEX,
 		func(_context): return true,
 		func(_context): return "",
+		func(_context): return [Vector2i.ZERO],
 		contextual_matcher,
 		func(_target, _context): return true,
 		func(_target, _context): return TestCommand.new()

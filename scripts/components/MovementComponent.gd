@@ -3,7 +3,7 @@ extends EntityComponent
 
 ## Manages movement range and grid positioning.
 
-@export var move_range: int = 3
+@export_range(0, 1000, 1) var move_range: int = 3
 @export var movement_speed: float = 4.0 # For visual lerping (future)
 
 signal movement_finished(final_pos: Vector2i)
@@ -26,11 +26,20 @@ func get_action_descriptors(_context: GameContext) -> Array[ActionDescriptor]:
 		ActionDescriptor.TargetingMode.HEX,
 		func(_current_context): return _move_validator.is_valid(),
 		func(_current_context): return "Movement validation is not configured." if not _move_validator.is_valid() else "",
+		func(_current_context): return _get_candidate_coordinates(),
 		func(target, current_context): return _is_valid_action_target(target, current_context),
 		func(target, current_context): return _is_valid_action_target(target, current_context),
 		func(target, _current_context): return MoveCommand.new(get_entity(), target.grid_position, self) if target is MapActionTarget else null
 	)
 	return [descriptor]
+
+func _get_candidate_coordinates() -> Variant:
+	var entity := get_entity() as GameEntity
+	if not entity:
+		return "MovementComponent requires a GameEntity parent to enumerate candidates."
+	if move_range < 0:
+		return "MovementComponent move_range must be non-negative."
+	return HexCoordinates.within_range(entity.grid_position, move_range)
 
 func can_move_to(new_position: Vector2i) -> bool:
 	var entity: GameEntity = get_entity() as GameEntity

@@ -17,6 +17,7 @@ var last_contract_error := ""
 
 var _availability_check: Callable
 var _unavailable_reason_provider: Callable
+var _candidate_coordinate_provider: Callable
 var _contextual_matcher: Callable
 var _target_validator: Callable
 var _command_factory: Callable
@@ -28,6 +29,7 @@ func _init(
 	p_targeting_mode: TargetingMode,
 	p_availability_check: Callable,
 	p_unavailable_reason_provider: Callable,
+	p_candidate_coordinate_provider: Callable,
 	p_contextual_matcher: Callable,
 	p_target_validator: Callable,
 	p_command_factory: Callable
@@ -38,6 +40,7 @@ func _init(
 	targeting_mode = p_targeting_mode
 	_availability_check = p_availability_check
 	_unavailable_reason_provider = p_unavailable_reason_provider
+	_candidate_coordinate_provider = p_candidate_coordinate_provider
 	_contextual_matcher = p_contextual_matcher
 	_target_validator = p_target_validator
 	_command_factory = p_command_factory
@@ -53,6 +56,8 @@ func validate_contract() -> String:
 		return "ActionDescriptor %s requires an availability check." % action_id
 	if not _unavailable_reason_provider.is_valid():
 		return "ActionDescriptor %s requires an unavailable-reason provider." % action_id
+	if not _candidate_coordinate_provider.is_valid():
+		return "ActionDescriptor %s requires a candidate-coordinate provider." % action_id
 	if not _contextual_matcher.is_valid():
 		return "ActionDescriptor %s requires a contextual matcher." % action_id
 	if not _target_validator.is_valid():
@@ -76,6 +81,23 @@ func get_unavailable_reason(context: GameContext) -> String:
 		_set_contract_error("ActionDescriptor %s unavailable-reason provider must return String." % action_id)
 		return ""
 	return result
+
+func get_candidate_coordinates(context: GameContext) -> Array[Vector2i]:
+	last_contract_error = ""
+	var result = _candidate_coordinate_provider.call(context)
+	if result is String and not result.strip_edges().is_empty():
+		_set_contract_error(result)
+		return []
+	if not result is Array:
+		_set_contract_error("ActionDescriptor %s candidate-coordinate provider must return Array[Vector2i]." % action_id)
+		return []
+	var coordinates: Array[Vector2i] = []
+	for candidate in result:
+		if typeof(candidate) != TYPE_VECTOR2I:
+			_set_contract_error("ActionDescriptor %s candidate-coordinate provider returned a non-Vector2i value." % action_id)
+			return []
+		coordinates.append(candidate)
+	return coordinates
 
 func matches_context(target: Variant, context: GameContext) -> bool:
 	last_contract_error = ""

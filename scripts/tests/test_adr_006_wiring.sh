@@ -48,7 +48,7 @@ grep -q 'Input.set_default_cursor_shape' scripts/ui/TargetingOverlay.gd || {
 	exit 1
 }
 
-grep -q 'var _valid_cells' scripts/ui/TargetingOverlay.gd || {
+grep -q 'var _valid_axial_cells' scripts/ui/TargetingOverlay.gd || {
 	echo "TargetingOverlay must cache valid targets instead of validating the whole map on each hover redraw."
 	exit 1
 }

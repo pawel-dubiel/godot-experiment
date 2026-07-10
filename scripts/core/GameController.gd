@@ -112,7 +112,10 @@ func _handle_action_selected(action_id: StringName) -> void:
 		return
 	if not availability.value:
 		var unavailable_reason := descriptor.get_unavailable_reason(_context)
-		action_bar.show_feedback(unavailable_reason.error if not unavailable_reason.is_success() else unavailable_reason.value, true)
+		if not unavailable_reason.is_success():
+			action_bar.show_feedback(unavailable_reason.error, true)
+			return
+		action_bar.show_feedback(unavailable_reason.value, true)
 		return
 	if descriptor.targeting_mode == ActionDescriptor.TargetingMode.NONE:
 		_execute_action(descriptor, null)

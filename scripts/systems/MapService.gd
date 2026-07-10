@@ -25,15 +25,4 @@ func initialize_map(new_tiles: Dictionary) -> void:
 
 ## Calculates distance between two hex coordinates (Cube/Axial distance).
 func get_distance(a: Vector2i, b: Vector2i) -> int:
-	# Using Axial coordinates (q, r) conversion to Cube (x, y, z)
-	# q = x, r = y
-	# s = -q - r
-	var aq = a.x
-	var ar = a.y
-	var as_ = -aq - ar
-	
-	var bq = b.x
-	var br = b.y
-	var bs = -bq - br
-	
-	return int((abs(aq - bq) + abs(ar - br) + abs(as_ - bs)) / 2)
+	return HexCoordinates.distance(a, b)

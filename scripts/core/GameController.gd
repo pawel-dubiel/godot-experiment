@@ -282,6 +282,6 @@ func _get_unit_near_world_position(world_position: Vector2, center_grid_position
 
 func _get_candidate_grid_positions(center_grid_position: Vector2i) -> Array[Vector2i]:
 	var positions: Array[Vector2i] = [center_grid_position]
-	for grid_position in tile_map.get_surrounding_cells(center_grid_position):
+	for grid_position in HexCoordinates.neighbors(center_grid_position):
 		positions.append(grid_position)
 	return positions

@@ -21,11 +21,18 @@ func _run() -> void:
 
 	var map_service: MapService = level.get_node("MapService")
 	var generated_cells := map_service.model.get_all_coords().size()
-	var generated_bounds := map_service.model.get_bounds()
+	var projected_cells: Dictionary = {}
+	for axial_value in map_service.model.get_all_coords():
+		projected_cells[HexGridProjection.axial_to_map(axial_value)] = true
 	var elapsed_ms := Time.get_ticks_msec() - started_at
 
 	_expect(generated_cells == 10_000, "The standard test level must generate exactly 10,000 cells; got %d." % generated_cells)
-	_expect(generated_bounds == Rect2i(Vector2i.ZERO, Vector2i(100, 100)), "The standard test level must have 100x100 bounds; got %s." % generated_bounds)
+	_expect(projected_cells.size() == 10_000, "Every generated axial cell must project to a unique offset cell.")
+	var expected_cells: Dictionary = {}
+	for row in range(100):
+		for column in range(100):
+			expected_cells[Vector2i(column, row)] = true
+	_expect(projected_cells == expected_cells, "The standard test level must project to exactly a 100x100 offset rectangle.")
 	_expect(elapsed_ms < 5_000, "The 100x100 test level must initialize within 5 seconds; took %d ms." % elapsed_ms)
 
 	level.queue_free()

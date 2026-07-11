@@ -38,12 +38,14 @@ The existing `grid_position` property name remains for scene compatibility, but 
 * The six canonical axial directions.
 * Neighbor enumeration.
 * Axial distance using the implied cube axis.
+* Pure odd-row offset ↔ axial conversion.
+* Enumeration of visually rectangular odd-row footprints as axial coordinates.
 
 Gameplay systems must use this contract instead of `TileMapLayer.get_surrounding_cells()` or view-specific coordinate behavior. Cube coordinates are derived temporarily inside algorithms; they are not stored as model state.
 
 ### 3. Explicit View Projection
 
-`HexGridProjection` is the only contract that converts between canonical axial coordinates and Godot map coordinates.
+`HexGridProjection` is the view-facing contract that converts between canonical axial coordinates and Godot map coordinates. It validates the Godot `TileSet` layout and delegates the pure odd-row arithmetic to `HexCoordinates`, allowing map generation to use the same conversion without depending on the view layer.
 
 For the current `TILE_LAYOUT_STACKED + TILE_OFFSET_AXIS_HORIZONTAL` configuration, Godot uses odd-row horizontal offset coordinates. With `parity(r) = posmod(r, 2)`, conversion is:
 
@@ -68,7 +70,15 @@ r = row
 
 Cell drawing also converts through `HexGridProjection`. Controllers and overlays use the `HexGridView` boundary and do not call `local_to_map()`, `map_to_local()`, or `get_surrounding_cells()` directly.
 
-### 5. Entity Boundary
+### 5. Rectangular Map Footprint
+
+`RectangularMapGenerator.width` and `height` describe offset columns and rows in the rendered footprint, not an axial bounding rectangle. The generator enumerates every whole offset cell in that rectangle, converts each to canonical axial coordinates through `HexCoordinates.odd_row_to_axial()`, and stores only axial keys in `MapModel`.
+
+This produces a screen-like rectangular board with alternating half-hex boundary steps. Hexes remain regular and edge-aligned; there is no screen-space shear, non-uniform scaling, clipping, or hidden logical tile. The axial bounding box is wider than `width` because it encloses a diagonally represented footprint and must not be interpreted as rendered dimensions.
+
+When a map is generated or replaced, `GameController` rebuilds occupancy from the completed `MapService.map_updated` event and rejects any authored unit whose axial position has no tile. It does not index or visually synchronize invalid units.
+
+### 6. Entity Boundary
 
 `GameEntity` stores axial state but does not reference `TileMapLayer`, `HexGridView`, or Godot map coordinates.
 
@@ -76,13 +86,14 @@ Cell drawing also converts through `HexGridProjection`. Controllers and overlays
 
 This keeps Godot grid ownership out of the entity/model API while preserving the current combined entity visual node.
 
-### 6. Coordinate Ownership
+### 7. Coordinate Ownership
 
 ```text
 Model, commands, occupancy, range: axial Vector2i(q, r)
 Neighbor and distance algorithms: HexCoordinates
 Temporary symmetric math: cube (q, r, s), where q + r + s = 0
 Godot map coordinates: HexGridProjection only
+Offset footprint selection: RectangularMapGenerator through HexCoordinates
 Local/world/screen positions: HexGridView, camera, input, and presentation
 ```
 
@@ -122,7 +133,7 @@ This matched the previous implementation but distributed layout ownership across
 * Every view projection performs a small parity-dependent conversion.
 * Developers must remember that `grid_position.x/y` mean `q/r`, not rectangular column/row.
 * Rows beyond the parity-neutral samples are reprojected compared with the previous raw-coordinate rendering; this is required to make visual adjacency match axial gameplay adjacency.
-* A visually rectangular offset-shaped map requires an explicit generation conversion rather than assuming an axial `Rect2i` is screen-rectangular.
+* Axial model bounds for a rectangular rendered footprint do not equal its rendered width and height; consumers must not interpret `MapModel.get_bounds()` as screen dimensions.
 * Changing the Godot tile layout requires implementing and testing a new projection.
 
 ## Verification
@@ -131,6 +142,7 @@ The implementation must demonstrate that:
 
 * Axial neighbor order and distance are correct for positive and negative coordinates.
 * Axial ↔ Godot map projection round-trips exactly.
+* A generated `width × height` rectangular footprint projects to exactly those whole offset cells with no missing, extra, clipped, or distorted hexes.
 * Projected axial neighbors exactly equal Godot's rendered neighbors across even, odd, and negative rows.
 * Every rendered neighbor has axial distance 1.
 * Gameplay and overlays do not call Godot map-coordinate APIs outside `HexGridView`.

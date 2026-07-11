@@ -2,18 +2,10 @@ class_name HexGridProjection
 extends RefCounted
 
 static func axial_to_map(axial: Vector2i) -> Vector2i:
-	var row := axial.y
-	var column_offset := _odd_row_column_offset(row)
-	return Vector2i(axial.x + column_offset, row)
+	return HexCoordinates.axial_to_odd_row(axial)
 
 static func map_to_axial(map_coordinate: Vector2i) -> Vector2i:
-	var row := map_coordinate.y
-	var column_offset := _odd_row_column_offset(row)
-	return Vector2i(map_coordinate.x - column_offset, row)
-
-static func _odd_row_column_offset(row: int) -> int:
-	# posmod keeps odd/even classification mathematical for negative rows.
-	return floori(float(row - posmod(row, 2)) / 2.0)
+	return HexCoordinates.odd_row_to_axial(map_coordinate)
 
 static func validate_tile_set(tile_set: TileSet) -> String:
 	if not tile_set:

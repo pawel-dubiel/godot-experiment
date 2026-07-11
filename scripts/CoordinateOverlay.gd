@@ -139,6 +139,8 @@ func _limit_candidate_cells(range_rect: Rect2i) -> Rect2i:
 	var candidate_count = range_rect.size.x * range_rect.size.y
 	if candidate_count <= max_visible_candidate_cells:
 		return range_rect
+	if not _range_exceeds_existing_cell_limit(range_rect):
+		return range_rect
 
 	if not _candidate_limit_warning_shown:
 		push_warning("CoordinateOverlay reached max_visible_candidate_cells (%d); visible range is cropped around the camera." % max_visible_candidate_cells)
@@ -152,6 +154,17 @@ func _limit_candidate_cells(range_rect: Rect2i) -> Rect2i:
 	var start_x = clampi(camera_cell.x - half_width, range_rect.position.x, range_rect.end.x - target_width)
 	var start_y = clampi(camera_cell.y - half_height, range_rect.position.y, range_rect.end.y - target_height)
 	return Rect2i(Vector2i(start_x, start_y), Vector2i(target_width, target_height))
+
+func _range_exceeds_existing_cell_limit(range_rect: Rect2i) -> bool:
+	var existing_cell_count := 0
+	for coordinate_value in map_service.model.get_all_coords():
+		var coordinate: Vector2i = coordinate_value
+		if not range_rect.has_point(coordinate):
+			continue
+		existing_cell_count += 1
+		if existing_cell_count > max_visible_candidate_cells:
+			return true
+	return false
 
 func _rebuild_coordinate_cache() -> void:
 	_coordinate_draw_entries.clear()

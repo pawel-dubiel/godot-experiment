@@ -19,6 +19,7 @@ func _run() -> void:
 	overlay.viewport_margin = Vector2.ZERO
 	level.add_child(overlay)
 	await process_frame
+	_assert_sparse_axial_bounds_do_not_trigger_cropping(overlay)
 
 	for scenario in [
 		{"position": Vector2(400, 300), "zoom": 1.0},
@@ -38,6 +39,13 @@ func _run() -> void:
 	for failure in _failures:
 		printerr(failure)
 	quit(1)
+
+func _assert_sparse_axial_bounds_do_not_trigger_cropping(overlay: Node2D) -> void:
+	overlay.max_visible_candidate_cells = 10_000
+	var map_bounds: Rect2i = overlay.map_service.model.get_bounds()
+	_expect(map_bounds.size.x * map_bounds.size.y > overlay.max_visible_candidate_cells, "The regression fixture requires sparse axial bounds larger than the real tile count.")
+	var limited_range: Rect2i = overlay._limit_candidate_cells(map_bounds)
+	_expect(limited_range == map_bounds, "Sparse axial bounds containing at most the candidate limit must not be cropped.")
 
 func _assert_viewport_corners_contained(overlay: Node2D) -> void:
 	var visible_range: Rect2i = overlay._get_visible_map_range()

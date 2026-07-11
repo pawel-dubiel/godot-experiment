@@ -30,10 +30,8 @@ func generate() -> void:
 	print("MapGenerator: Generating %dx%d map data..." % [width, height])
 	
 	var tiles = {}
-	for x in range(width):
-		for y in range(height):
-			# Model keys are axial (q, r); this range creates an axial parallelogram.
-			tiles[Vector2i(x, y)] = default_terrain
+	for axial in HexCoordinates.odd_row_rectangle(width, height):
+		tiles[axial] = default_terrain
 			
 	map_service.initialize_map(tiles)
 	print("MapGenerator: Done.")

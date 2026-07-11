@@ -2,16 +2,22 @@
 set -euo pipefail
 
 projection_path="scripts/view/HexGridProjection.gd"
+coordinates_path="scripts/core/hex/HexCoordinates.gd"
 overlay_path="scripts/ui/TargetingOverlay.gd"
 session_path="scripts/ui/TargetingSession.gd"
 
-grep -q 'static func _odd_row_column_offset(row: int) -> int:' "$projection_path" || {
-	echo "HexGridProjection must name its odd-row parity calculation."
+grep -q 'static func _odd_row_column_offset(row: int) -> int:' "$coordinates_path" || {
+	echo "HexCoordinates must name its odd-row parity calculation."
 	exit 1
 }
 
-[[ "$(grep -c 'floori(float(row - posmod(row, 2)) / 2.0)' "$projection_path")" -eq 1 ]] || {
-	echo "HexGridProjection must define the parity formula in exactly one place."
+[[ "$(grep -c 'floori(float(row - posmod(row, 2)) / 2.0)' "$coordinates_path")" -eq 1 ]] || {
+	echo "HexCoordinates must define the parity formula in exactly one place."
+	exit 1
+}
+
+grep -q 'HexCoordinates.axial_to_odd_row(axial)' "$projection_path" || {
+	echo "HexGridProjection must delegate odd-row conversion to the pure coordinate contract."
 	exit 1
 }
 

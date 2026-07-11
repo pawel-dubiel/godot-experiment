@@ -27,7 +27,8 @@ func _ready() -> void:
 		return
 	_context = GameContext.new(map_service, null, SeededRandomSource.new(random_seed))
 	_connect_interaction_boundaries()
-	call_deferred("_rebuild_unit_index")
+	if not map_service.model.get_all_coords().is_empty():
+		call_deferred("_rebuild_unit_index")
 
 func _resolve_dependencies() -> bool:
 	var missing: Array[String] = []
@@ -66,6 +67,7 @@ func _connect_interaction_boundaries() -> void:
 	input_router.camera_direction_requested.connect(camera_control.pan_direction)
 	input_router.camera_zoom_requested.connect(camera_control.zoom_at)
 	action_bar.action_selected.connect(_handle_action_selected)
+	map_service.map_updated.connect(_rebuild_unit_index)
 
 func _handle_select(screen_position: Vector2) -> void:
 	_cancel_targeting()
@@ -209,8 +211,14 @@ func _rebuild_unit_index() -> void:
 		return
 	var units: Array[GameEntity] = []
 	for node in units_root.get_children():
-		if node is GameEntity and _track_unit(node):
+		if node is GameEntity:
 			units.append(node)
+	for unit in units:
+		if not map_service.model.has_tile(unit.grid_position):
+			push_error("GameController cannot index unit %s at %s because the map has no tile there." % [unit.name, unit.grid_position])
+			return
+	for unit in units:
+		_track_unit(unit)
 	var rebuild_result := _unit_index.rebuild(units)
 	if not rebuild_result.is_success():
 		push_error(rebuild_result.error)

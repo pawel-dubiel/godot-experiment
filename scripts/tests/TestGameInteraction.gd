@@ -26,6 +26,15 @@ func _run() -> void:
 	var tank: GameEntity = level.get_node("Tank")
 	var camera: CameraControl = level.get_node("Camera2D")
 
+	var off_map_unit := GameEntity.new()
+	off_map_unit.name = "OffMapUnit"
+	off_map_unit.grid_position = Vector2i(99, 99)
+	level.add_child(off_map_unit)
+	controller._rebuild_unit_index()
+	_expect(controller._get_unit_at_grid_position(off_map_unit.grid_position) == null, "Unit indexing must reject authored units outside the generated map footprint.")
+	off_map_unit.queue_free()
+	await process_frame
+
 	var soldier_screen := soldier.get_global_transform_with_canvas() * Vector2.ZERO
 	router.handle_event(_mouse_button(MOUSE_BUTTON_LEFT, true, soldier_screen))
 	router.handle_event(_mouse_button(MOUSE_BUTTON_LEFT, false, soldier_screen))
